@@ -48,13 +48,19 @@ body {
 
 /* Animations */
 @keyframes pulse-border {
-  0%, 100% { border-color: rgba(99, 102, 241, 0.4); border-width: 2px; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-  50% { border-color: rgba(99, 102, 241, 1); border-width: 2px; box-shadow: 0 0 20px 0 rgba(99, 102, 241, 0.2); }
+  0%, 100% { 
+    border-color: rgba(99, 102, 241, 0.3); 
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); 
+  }
+  50% { 
+    border-color: rgba(99, 102, 241, 0.8); 
+    box-shadow: 0 0 15px 0 rgba(99, 102, 241, 0.15); 
+  }
 }
 
 @keyframes pulse-content {
   0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.02); opacity: 0.8; }
+  50% { transform: scale(1.015); opacity: 0.9; }
 }
 
 @keyframes shimmer {
@@ -63,11 +69,14 @@ body {
 }
 
 .drag-pulsing {
-  animation: pulse-border 1.5s infinite ease-in-out;
-  background-color: rgba(99, 102, 241, 0.08) !important;
+  animation: pulse-border 2s infinite ease-in-out;
+  background-color: rgba(99, 102, 241, 0.06) !important;
+  border-style: solid !important;
 }
 
-.drag-content-pulsing { animation: pulse-content 1.5s infinite ease-in-out; }
+.drag-content-pulsing { 
+  animation: pulse-content 2s infinite ease-in-out; 
+}
 
 .shimmer-effect::after {
   content: "";

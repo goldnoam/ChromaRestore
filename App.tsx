@@ -284,8 +284,8 @@ const App: React.FC = () => {
               <div className={`w-16 h-16 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 transition-all group-hover:scale-110 ${isDragging ? 'scale-125 drag-content-pulsing' : ''}`}>
                 <svg className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
               </div>
-              <h3 className="text-2xl font-black mb-1 theme-text-main">{t.dropzoneTitle}</h3>
-              <p className="theme-text-muted text-[10px] font-black uppercase tracking-[0.2em]">{t.dropzoneSub}</p>
+              <h3 className={`text-2xl font-black mb-1 theme-text-main transition-all ${isDragging ? 'drag-content-pulsing' : ''}`}>{t.dropzoneTitle}</h3>
+              <p className={`theme-text-muted text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isDragging ? 'drag-content-pulsing' : ''}`}>{t.dropzoneSub}</p>
             </div>
 
             {images.length > 0 && (
