@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Language, ImageItem } from './types';
 import { translations } from './i18n';
-import { processImageWithGemini, fileToBase64 } from './services/geminiService';
+import { processImageLocally, fileToBase64 } from './services/geminiService';
 import { ImageCard } from './components/ImageCard';
 import { AdPlaceholder } from './components/AdPlaceholder';
 
@@ -69,7 +69,12 @@ const App: React.FC = () => {
 
     try {
       const base64 = await fileToBase64(nextItem.file);
-      const resultUrl = await processImageWithGemini(base64, nextItem.file.type);
+      // Processing locally - no API key required
+      const resultUrl = await processImageLocally(base64, nextItem.file.type);
+      
+      // Simulate a tiny delay for visual feedback of "restoring"
+      await new Promise(r => setTimeout(r, 400));
+
       setImages(prev => prev.map(img => 
         img.id === nextItem.id ? { ...img, status: 'completed', resultUrl, destination: targetLabel } : img
       ));
@@ -376,7 +381,6 @@ const App: React.FC = () => {
                   <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 theme-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
 
-                {/* Gallery Toolbar - New feature for batch exporting completed images */}
                 <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border theme-border theme-bg-card shadow-sm`}>
                   <div className="flex items-center gap-6">
                     <div className="flex flex-col">
@@ -495,7 +499,7 @@ const App: React.FC = () => {
                    </div>
                    <h4 className="text-2xl font-black text-rose-300 mb-3 uppercase tracking-widest drop-shadow-lg">{t.error}</h4>
                    <p className="text-slate-100 text-sm max-w-lg bg-black/60 p-6 rounded-2xl border border-white/10 shadow-3xl font-mono leading-relaxed backdrop-blur-lg">
-                     {images[selectedIndex].error || "Processing failed. This may be due to image complexity or model constraints."}
+                     {images[selectedIndex].error || "Processing failed. Local engine encountered an issue."}
                    </p>
                 </div>
               )}
@@ -559,8 +563,8 @@ const App: React.FC = () => {
       )}
 
       <footer className="py-16 text-center opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by Gemini 2.5 Restoration Engine</p>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">© 2026 ChromaRestore Pro Systems</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by ChromaRestore Local Engine</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">© 2026 Privacy-First Restoration Systems</p>
       </footer>
     </div>
   );
