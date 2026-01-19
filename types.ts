@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'he' | 'zh' | 'hi' | 'de' | 'es' | 'fr';
 
 export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia' | 'artistic' | 'stable';
@@ -104,7 +103,6 @@ export interface Translation {
   vibrantDesc: string;
   sepiaDesc: string;
   noneDesc: string;
-  // New Engine translations
   engineType: string;
   localEngine: string;
   opencvEngine: string;

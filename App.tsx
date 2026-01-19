@@ -20,6 +20,7 @@ const LUCKY_PROFILES: RestoreParams[] = [
   { temp: 10, saturation: 1.8, contrast: 1.4, intensity: 1.0, grading: 'vibrant', engine: 'paddlehub' },
   { temp: 20, saturation: 1.1, contrast: 1.0, intensity: 0.7, grading: 'sepia', engine: 'local' },
   { temp: 5, saturation: 1.5, contrast: 1.3, intensity: 1.0, grading: 'artistic', engine: 'opencv' },
+  { temp: 0, saturation: 1.0, contrast: 1.0, intensity: 1.0, grading: 'stable', engine: 'paddlehub' },
 ];
 
 const PRESET_ICONS: Record<GradingPreset, string> = {
@@ -53,6 +54,7 @@ const App: React.FC = () => {
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const [lastSaved, setLastSaved] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [targetPrefix, setTargetPrefix] = useState('');
   
   const [tuningParams, setTuningParams] = useState<RestoreParams>(DEFAULT_PARAMS);
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -91,6 +93,17 @@ const App: React.FC = () => {
       document.exitFullscreen();
     }
   }, []);
+
+  // Keyboard shortcut for fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedIndex !== null && e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIndex, toggleFullscreen]);
 
   // SEO & Meta Initialization
   useEffect(() => {
@@ -172,6 +185,17 @@ const App: React.FC = () => {
     return () => el.removeEventListener('wheel', handleWheel);
   }, [selectedIndex]);
 
+  const exportSingle = useCallback((item: ImageItem) => {
+    if (!item.resultUrl) return;
+    const prefix = targetPrefix.trim() || 'colorized';
+    const link = document.createElement('a');
+    link.href = item.resultUrl;
+    link.download = `${prefix}_${item.file.name}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [targetPrefix]);
+
   const processSingle = useCallback(async (item: ImageItem, params: RestoreParams = DEFAULT_PARAMS) => {
     try {
       const base64 = await fileToBase64(item.file);
@@ -222,16 +246,6 @@ const App: React.FC = () => {
   }, [images, isProcessing, processSingle]);
 
   useEffect(() => { processNextPending(); }, [images, processNextPending]);
-
-  const exportSingle = useCallback((item: ImageItem) => {
-    if (!item.resultUrl) return;
-    const link = document.createElement('a');
-    link.href = item.resultUrl;
-    link.download = `restored_${item.file.name}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, []);
 
   const exportCompleted = useCallback(() => {
     images.forEach(img => {
@@ -368,6 +382,16 @@ const App: React.FC = () => {
           <aside className="lg:col-span-1 space-y-6">
             <div className={`p-6 rounded-[2.5rem] shadow-2xl border theme-border theme-bg-card`}>
               <div className="mt-4 space-y-3">
+                <div className="space-y-1.5 mb-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest theme-text-muted px-1">{t.targetFolder}</label>
+                  <input 
+                    type="text" 
+                    value={targetPrefix}
+                    onChange={(e) => setTargetPrefix(e.target.value)}
+                    placeholder={t.targetFolderPlaceholder}
+                    className="w-full px-4 py-3 rounded-xl border theme-border theme-bg-app theme-text-main text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  />
+                </div>
                 <button 
                   onClick={() => images.some(i => i.status === 'completed') && exportCompleted()} 
                   disabled={!images.some(i => i.status === 'completed')} 
@@ -472,6 +496,9 @@ const App: React.FC = () => {
              <div className="h-16 px-6 flex items-center justify-between border-b theme-border backdrop-blur-xl theme-bg-card z-10">
                 <span className="text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border">{images[selectedIndex].file.name}</span>
                 <div className="flex items-center gap-2">
+                  <button onClick={() => exportSingle(images[selectedIndex])} className={`p-2 rounded-xl transition-all border theme-border flex items-center justify-center w-10 h-10 theme-bg-app theme-text-main hover:bg-slate-100 dark:hover:bg-slate-800`} data-tooltip={t.export}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  </button>
                   <button onClick={toggleFullscreen} className={`p-2 rounded-xl transition-all border theme-border flex items-center justify-center w-10 h-10 ${isFullscreen ? 'bg-indigo-600 text-white border-indigo-500' : 'theme-bg-app theme-text-main hover:bg-slate-100 dark:hover:bg-slate-800'}`} data-tooltip={t.fullScreen}>
                     {isFullscreen ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
@@ -571,6 +598,16 @@ const App: React.FC = () => {
              </div>
 
              <div className="mt-auto space-y-3 pb-4">
+                <div className="space-y-1.5 mb-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest theme-text-muted px-1">{t.targetFolder}</label>
+                  <input 
+                    type="text" 
+                    value={targetPrefix}
+                    onChange={(e) => setTargetPrefix(e.target.value)}
+                    placeholder={t.targetFolderPlaceholder}
+                    className="w-full px-4 py-3 rounded-xl border theme-border theme-bg-app theme-text-main text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button onClick={handleResetTuning} className="p-3 rounded-2xl border theme-border theme-text-muted text-[9px] font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" data-tooltip={t.resetTuning}>🔄 {t.resetTuning.split(' ')[0]}</button>
                   <button onClick={handleShowOriginal} className="p-3 rounded-2xl border theme-border theme-text-muted text-[9px] font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" data-tooltip={t.showOriginal}>🖼️ {t.original}</button>
