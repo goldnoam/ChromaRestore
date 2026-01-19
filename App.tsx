@@ -88,15 +88,16 @@ const App: React.FC = () => {
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (selectedIndex === null) return;
-    // Normalize delta for different browsers/mice
-    const delta = e.deltaY > 0 ? -0.15 : 0.15;
-    setZoomLevel(prev => Math.min(Math.max(prev + delta, 1), 6));
+    // Normalized smooth wheel zoom
+    const delta = -e.deltaY;
+    const factor = 0.001; // Sensitivity
+    setZoomLevel(prev => Math.min(Math.max(prev + delta * factor * prev, 1), 8));
   }, [selectedIndex]);
 
   const toggleFullScreen = useCallback(() => {
     if (!document.fullscreenElement) {
       modalRef.current?.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        console.error(`Fullscreen failed: ${err.message}`);
       });
       setIsFullScreen(true);
     } else {
@@ -117,10 +118,10 @@ const App: React.FC = () => {
         const handle = await (window as any).showDirectoryPicker();
         setTargetLabel(handle.name);
       } catch (e) {
-        console.debug('Folder picker cancelled or failed', e);
+        console.debug('Folder picker cancelled', e);
       }
     } else {
-      alert('Your browser does not support folder picking. Please type the name manually.');
+      alert('Manual folder typing is required on this browser.');
     }
   };
 
@@ -145,7 +146,7 @@ const App: React.FC = () => {
           link.href = img.resultUrl!;
           link.download = `${prefix}_${img.file.name}`;
           link.click();
-        }, idx * 200);
+        }, idx * 150);
       }
     });
   };
@@ -153,7 +154,7 @@ const App: React.FC = () => {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (selectedIndex === null) return;
     if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullScreen(); }
-    else if (e.key === '+' || e.key === '=') { e.preventDefault(); setZoomLevel(prev => Math.min(prev + 0.2, 5)); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); setZoomLevel(prev => Math.min(prev + 0.2, 8)); }
     else if (e.key === '-' || e.key === '_') { e.preventDefault(); setZoomLevel(prev => Math.max(prev - 0.2, 1)); }
     else if (e.key === '0') { e.preventDefault(); resetView(); }
     else if (e.key === 'Escape') {
@@ -180,7 +181,6 @@ const App: React.FC = () => {
               value={lang} 
               onChange={(e) => setLang(e.target.value as Language)}
               title={t.languageSelect}
-              aria-label={t.languageSelect}
               className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer text-slate-100"
             >
               <option value="en">English</option>
@@ -208,20 +208,7 @@ const App: React.FC = () => {
           <aside className="lg:col-span-1 space-y-6">
             <div className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl border border-slate-800">
               <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">{t.targetFolder}</label>
-              <div 
-                className="relative group"
-                onDragOver={(e) => { e.preventDefault(); }}
-                onDrop={(e) => { 
-                  e.preventDefault(); 
-                  const files = e.dataTransfer.items;
-                  if (files && files[0] && files[0].kind === 'file') {
-                    const entry = (files[0] as any).webkitGetAsEntry();
-                    if (entry && entry.isDirectory) {
-                      setTargetLabel(entry.name);
-                    }
-                  }
-                }}
-              >
+              <div className="relative group">
                 <input 
                   type="text" 
                   list="labels-list"
@@ -229,6 +216,7 @@ const App: React.FC = () => {
                   onChange={(e) => setTargetLabel(e.target.value)}
                   placeholder={t.targetFolderPlaceholder} 
                   className="w-full pl-4 pr-10 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm font-medium text-white placeholder:text-slate-700" 
+                  title={t.targetFolder}
                 />
                 <datalist id="labels-list">
                   {usedLabels.map(s => <option key={s} value={s} />)}
@@ -301,7 +289,7 @@ const App: React.FC = () => {
                   item={img} 
                   t={t} 
                   onRemove={(id) => setImages(prev => prev.filter(i => i.id !== id))} 
-                  onSelect={() => { setSelectedIndex(images.indexOf(img)); setShowOriginalInModal(false); resetView(); }} 
+                  onSelect={(item) => { setSelectedIndex(images.indexOf(item)); setShowOriginalInModal(false); resetView(); }} 
                   onShare={handleShare} 
                 />
               ))}
@@ -313,16 +301,15 @@ const App: React.FC = () => {
       {selectedIndex !== null && images[selectedIndex] && (
         <div 
           ref={modalRef} 
-          className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-3xl animate-in fade-in duration-500 overflow-hidden" 
+          className="fixed inset-0 z-50 flex flex-col bg-slate-950/98 backdrop-blur-3xl animate-in fade-in duration-300 overflow-hidden" 
           onClick={() => setSelectedIndex(null)}
           onWheel={handleWheel}
         >
-          {/* Header Bar - Floating and Translucent */}
-          <div className="absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between bg-slate-900/40 backdrop-blur-md border-b border-white/5 transition-opacity hover:opacity-100 opacity-90" onClick={e => e.stopPropagation()}>
+          {/* Header Bar - Distinct & Sticky */}
+          <div className={`absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between border-b border-white/5 transition-all ${isFullScreen ? 'bg-slate-900/30 opacity-40 hover:opacity-100' : 'bg-slate-900/90 backdrop-blur-xl'}`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 truncate">
                <span className="text-white text-[10px] font-black uppercase tracking-wider truncate bg-slate-950/60 px-3 py-1.5 rounded-lg border border-white/10">{images[selectedIndex].file.name}</span>
-               {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse">FULLSCREEN MODE</span>}
-               {images[selectedIndex].status === 'error' && <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20" title={images[selectedIndex].error}>{t.error}</span>}
+               {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse tracking-widest bg-indigo-500/10 px-2 py-1 rounded">LIVE FULLSCREEN</span>}
             </div>
             <div className="flex items-center gap-3">
               {images[selectedIndex].resultUrl && (
@@ -355,70 +342,70 @@ const App: React.FC = () => {
 
           {/* Main Viewport */}
           <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative transition-transform duration-200 ease-out cursor-zoom-in" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
+            <div className="relative transition-transform duration-100 ease-out" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
               <img 
                 src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
-                alt="Preview" 
-                className="max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] border border-white/5" 
+                alt="Restored Preview" 
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] border border-white/5" 
               />
               {images[selectedIndex].status === 'error' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-950/40 backdrop-blur-sm rounded-2xl md:rounded-[2rem] p-6 text-center">
-                   <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mb-4 border border-rose-500/40">
-                      <svg className="w-8 h-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-950/60 backdrop-blur-md rounded-2xl md:rounded-[2rem] p-8 text-center border-2 border-rose-500/20">
+                   <div className="w-20 h-20 bg-rose-500/30 rounded-full flex items-center justify-center mb-6 border border-rose-500/50 shadow-2xl animate-bounce">
+                      <svg className="w-10 h-10 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                    </div>
-                   <h4 className="text-xl font-black text-rose-400 mb-2 uppercase tracking-widest">{t.error}</h4>
-                   <p className="text-slate-200 text-sm max-w-md bg-slate-900/80 p-4 rounded-xl border border-white/5 shadow-2xl font-mono break-words">
-                     {images[selectedIndex].error || "An unknown error occurred during colorization."}
+                   <h4 className="text-2xl font-black text-rose-300 mb-3 uppercase tracking-widest drop-shadow-lg">{t.error}</h4>
+                   <p className="text-slate-100 text-sm max-w-lg bg-black/60 p-6 rounded-2xl border border-white/10 shadow-3xl font-mono leading-relaxed backdrop-blur-lg">
+                     {images[selectedIndex].error || "A processing error occurred. Please check your internet or try a different image format."}
                    </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Controls Island - Adapts for Fullscreen */}
-          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 transition-all ${isFullScreen ? 'scale-110 drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]' : ''}`} onClick={e => e.stopPropagation()}>
-            <div className="bg-slate-900/70 backdrop-blur-xl border border-white/10 rounded-[2rem] px-6 py-4 flex items-center gap-6 shadow-2xl min-w-[320px] max-w-[90vw]">
+          {/* Controls Island - Adapts for Fullscreen Accessibility */}
+          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-5 transition-all duration-500 ${isFullScreen ? 'bottom-12 scale-110' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className={`flex items-center gap-6 px-8 py-5 rounded-[2.5rem] border shadow-3xl transition-all duration-500 ${isFullScreen ? 'bg-indigo-950/50 border-indigo-500/30 backdrop-blur-2xl ring-4 ring-indigo-500/10' : 'bg-slate-900/80 border-white/10 backdrop-blur-xl'}`}>
               <button 
-                onClick={() => setZoomLevel(prev => Math.max(prev - 0.2, 1))} 
-                className="p-3 bg-slate-800/80 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 rounded-2xl border border-white/5 transition-all"
+                onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} 
+                className="p-4 bg-slate-800/80 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-2xl border border-white/5 transition-all shadow-lg active:scale-90"
                 title={t.zoomOut}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" /></svg>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
               </button>
               
-              <div className="flex-1 flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-2 min-w-[140px]">
                  <input 
                    type="range" 
                    min="1" 
-                   max="5" 
-                   step="0.05" 
+                   max="8" 
+                   step="0.01" 
                    value={zoomLevel} 
                    onChange={(e) => setZoomLevel(parseFloat(e.target.value))} 
-                   className="w-full accent-indigo-500 h-1.5 rounded-full cursor-pointer opacity-80 hover:opacity-100 transition-opacity" 
+                   className="w-full accent-indigo-400 h-2 rounded-full cursor-pointer hover:accent-indigo-300 transition-all shadow-inner" 
                    title={t.zoomLevel}
                  />
-                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t.zoomLevel}: {Math.round(zoomLevel * 100)}%</span>
+                 <span className="text-[10px] font-black text-indigo-200 uppercase tracking-widest drop-shadow-md">{t.zoomLevel}: {Math.round(zoomLevel * 100)}%</span>
               </div>
 
               <button 
-                onClick={() => setZoomLevel(prev => Math.min(prev + 0.2, 5))} 
-                className="p-3 bg-slate-800/80 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 rounded-2xl border border-white/5 transition-all"
+                onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} 
+                className="p-4 bg-slate-800/80 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-2xl border border-white/5 transition-all shadow-lg active:scale-90"
                 title={t.zoomIn}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
               </button>
 
-              <div className="w-px h-8 bg-white/10 hidden sm:block"></div>
+              <div className="w-px h-10 bg-white/10 hidden sm:block"></div>
 
               <button 
                 onClick={toggleFullScreen}
-                className={`p-3 rounded-2xl border border-white/5 transition-all hidden sm:block ${isFullScreen ? 'bg-indigo-600/40 text-indigo-200 border-indigo-500/30' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'}`}
+                className={`p-4 rounded-2xl border transition-all hidden sm:block shadow-lg active:scale-95 ${isFullScreen ? 'bg-indigo-600 text-white border-indigo-400 ring-2 ring-white/20' : 'bg-slate-800/80 border-white/10 text-slate-300 hover:bg-slate-700'}`}
                 title={t.fullScreen}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {isFullScreen 
-                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                   }
                 </svg>
               </button>
@@ -426,7 +413,7 @@ const App: React.FC = () => {
             
             <button 
               onClick={resetView} 
-              className="px-4 py-2 bg-slate-950/60 backdrop-blur-md border border-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors shadow-xl"
+              className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl border ${isFullScreen ? 'bg-indigo-600/60 text-white border-white/20 backdrop-blur-lg' : 'bg-slate-950/80 text-indigo-400 border-white/5 hover:text-indigo-200'}`}
               title={t.resetView}
             >
               {t.resetView}
@@ -435,9 +422,9 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <footer className="py-16 text-center opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Restoration Engine powered by Gemini 2.5</p>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-indigo-400">(C) Noam Gold AI 2026</p>
+      <footer className="py-16 text-center opacity-30">
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by Gemini 2.5 Restoration Engine</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">© 2026 ChromaRestore Pro Systems</p>
       </footer>
     </div>
   );

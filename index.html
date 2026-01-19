@@ -35,10 +35,13 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Using relative path without leading slash for better compatibility with Vercel/Static hosts
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.debug('SW registered:', reg.scope))
-          .catch(err => console.debug('SW registration failed:', err));
+        // Use relative path with ./ to ensure correct lookup in Vercel subdirectories
+        // only register on secure origins
+        if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+          navigator.serviceWorker.register('./sw.js', { scope: './' })
+            .then(reg => console.debug('SW registered:', reg.scope))
+            .catch(err => console.debug('SW registration failed:', err));
+        }
       });
     }
   </script>
