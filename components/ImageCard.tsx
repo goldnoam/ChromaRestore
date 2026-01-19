@@ -58,7 +58,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
       </div>
 
       <div className={`p-3 flex items-center justify-between transition-colors theme-bg-card`}>
-        <div className="flex items-center gap-2 truncate max-w-[65%]">
+        <div className="flex items-center gap-2 truncate max-w-[50%]">
           <div 
             className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColors[item.status]}`} 
             title={item.status === 'error' ? errorTooltip : statusLabel}
@@ -68,6 +68,14 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
           </p>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onSelect(item); }} 
+            className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-indigo-500/20 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}
+            title={t.fullScreen}
+            aria-label={t.fullScreen}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+          </button>
           <button 
             onClick={(e) => { e.stopPropagation(); onShare(item); }} 
             className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-indigo-500/20 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}

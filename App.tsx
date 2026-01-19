@@ -7,6 +7,11 @@ import { AdPlaceholder } from './components/AdPlaceholder';
 
 const INITIAL_SUGGESTIONS = ['Personal Photos', 'Family Heritage', 'Travel 2024', 'Work Projects', 'Client Deliverables'];
 
+interface ViewState {
+  zoom: number;
+  pan: { x: number; y: number };
+}
+
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -23,9 +28,12 @@ const App: React.FC = () => {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showOriginalInModal, setShowOriginalInModal] = useState(false);
+  const [viewStates, setViewStates] = useState<Record<string, ViewState>>({});
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const isDraggingImage = useRef(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
   const t = translations[lang];
   const isRtl = lang === 'he';
 
@@ -37,6 +45,16 @@ const App: React.FC = () => {
   const filteredImages = images.filter(img => 
     img.file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  useEffect(() => {
+    if (selectedIndex !== null && images[selectedIndex]) {
+      const id = images[selectedIndex].id;
+      setViewStates(prev => ({
+        ...prev,
+        [id]: { zoom: zoomLevel, pan: panOffset }
+      }));
+    }
+  }, [zoomLevel, panOffset, selectedIndex, images]);
 
   const processNextPending = useCallback(async () => {
     const nextItem = images.find(img => img.status === 'pending');
@@ -97,19 +115,44 @@ const App: React.FC = () => {
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (selectedIndex === null) return;
     const delta = -e.deltaY;
-    const factor = 0.001;
+    const factor = 0.0005; // Finer grain zoom
     setZoomLevel(prev => Math.min(Math.max(prev + delta * factor * prev, 1), 8));
   }, [selectedIndex]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (selectedIndex === null) return;
+    isDraggingImage.current = true;
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDraggingImage.current) return;
+    const dx = e.clientX - lastMousePos.current.x;
+    const dy = e.clientY - lastMousePos.current.y;
+    setPanOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDraggingImage.current = false;
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   const toggleFullScreen = useCallback(() => {
     if (!document.fullscreenElement) {
       modalRef.current?.requestFullscreen().catch(err => {
         console.error(`Fullscreen failed: ${err.message}`);
       });
-      setIsFullScreen(true);
     } else {
       document.exitFullscreen();
-      setIsFullScreen(false);
     }
   }, []);
 
@@ -176,6 +219,19 @@ const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  const onSelectImage = (item: ImageItem) => {
+    const index = images.indexOf(item);
+    setSelectedIndex(index);
+    setShowOriginalInModal(false);
+    const savedState = viewStates[item.id];
+    if (savedState) {
+      setZoomLevel(savedState.zoom);
+      setPanOffset(savedState.pan);
+    } else {
+      resetView();
+    }
+  };
 
   return (
     <div className={`min-h-screen ${theme} theme-bg-app theme-text-main font-sans lang-${lang} ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
@@ -310,7 +366,7 @@ const App: React.FC = () => {
                   t={t} 
                   theme={theme}
                   onRemove={(id) => setImages(prev => prev.filter(i => i.id !== id))} 
-                  onSelect={(item) => { setSelectedIndex(images.indexOf(item)); setShowOriginalInModal(false); resetView(); }} 
+                  onSelect={onSelectImage} 
                   onShare={handleShare} 
                 />
               ))}
@@ -326,11 +382,11 @@ const App: React.FC = () => {
           onClick={() => setSelectedIndex(null)}
           onWheel={handleWheel}
         >
-          {/* Header Bar - Distinct & Sticky */}
+          {/* Header Bar - More distinct in normal mode, subtle in fullscreen */}
           <div className={`absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between border-b theme-border transition-all ${isFullScreen ? 'opacity-40 hover:opacity-100 bg-slate-900/30' : 'backdrop-blur-xl theme-bg-card'}`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 truncate">
                <span className={`text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>{images[selectedIndex].file.name}</span>
-               {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse tracking-widest bg-indigo-500/10 px-2 py-1 rounded">LIVE FULLSCREEN</span>}
+               {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse tracking-widest bg-indigo-500/10 px-2 py-1 rounded">FULLSCREEN</span>}
             </div>
             <div className="flex items-center gap-3">
               {images[selectedIndex].resultUrl && (
@@ -363,11 +419,16 @@ const App: React.FC = () => {
 
           {/* Main Viewport */}
           <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative transition-transform duration-100 ease-out" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
+            <div 
+              className="relative transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing" 
+              style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}
+              onMouseDown={handleMouseDown}
+            >
               <img 
                 src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
                 alt="Restored Preview" 
-                className={`max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] border theme-border ${theme === 'dark' ? 'shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]' : 'shadow-2xl'}`} 
+                draggable={false}
+                className={`max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] border theme-border select-none ${theme === 'dark' ? 'shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]' : 'shadow-2xl'}`} 
               />
               {images[selectedIndex].status === 'error' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-950/60 backdrop-blur-md rounded-2xl md:rounded-[2rem] p-8 text-center border-2 border-rose-500/20">
@@ -376,14 +437,14 @@ const App: React.FC = () => {
                    </div>
                    <h4 className="text-2xl font-black text-rose-300 mb-3 uppercase tracking-widest drop-shadow-lg">{t.error}</h4>
                    <p className="text-slate-100 text-sm max-w-lg bg-black/60 p-6 rounded-2xl border border-white/10 shadow-3xl font-mono leading-relaxed backdrop-blur-lg">
-                     {images[selectedIndex].error || "A processing error occurred. Please check your internet or try a different image format."}
+                     {images[selectedIndex].error || "Processing failed. This may be due to image complexity or model constraints."}
                    </p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Controls Island */}
+          {/* Controls Island - Floating centered bar */}
           <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-5 transition-all duration-500 ${isFullScreen ? 'bottom-12 scale-110' : ''}`} onClick={e => e.stopPropagation()}>
             <div className={`flex items-center gap-6 px-8 py-5 rounded-[2.5rem] border shadow-3xl transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/80 border-white/10 backdrop-blur-xl' : 'bg-white/90 border-slate-200 backdrop-blur-xl'}`}>
               <button 
