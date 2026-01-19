@@ -13,9 +13,9 @@ interface ImageCardProps {
 export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, onSelect, onShare }) => {
   const statusColors = {
     pending: theme === 'dark' ? 'bg-slate-600' : 'bg-slate-400',
-    processing: 'bg-indigo-400 animate-pulse',
-    completed: 'bg-emerald-500',
-    error: 'bg-rose-500'
+    processing: 'bg-amber-400 animate-pulse', // Yellow as requested
+    completed: 'bg-emerald-500', // Green
+    error: 'bg-red-500' // Red
   };
 
   const statusLabel = t[item.status as keyof Translation] || item.status;
@@ -34,8 +34,8 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
         />
         
         {item.status === 'processing' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-indigo-950/20 backdrop-blur-[2px]">
-            <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-amber-950/20 backdrop-blur-[2px]">
+            <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
           </div>
         )}
 
@@ -46,9 +46,9 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
         />
 
         {item.status === 'error' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-rose-500/20 backdrop-blur-[1px] p-4 text-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-red-500/20 backdrop-blur-[1px] p-4 text-center">
             <span 
-              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg cursor-help ${theme === 'dark' ? 'bg-slate-950/80 text-rose-400' : 'bg-white/90 text-rose-600'}`}
+              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg cursor-help ${theme === 'dark' ? 'bg-slate-950/80 text-red-400' : 'bg-white/90 text-red-600'}`}
               title={errorTooltip}
             >
               {t.error}

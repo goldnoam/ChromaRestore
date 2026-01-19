@@ -1,5 +1,7 @@
 export type Language = 'en' | 'he' | 'zh' | 'hi' | 'de' | 'es' | 'fr';
 
+export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia';
+
 export interface ImageItem {
   id: string;
   file: File;
@@ -15,6 +17,7 @@ export interface RestoreParams {
   saturation: number;
   contrast: number;
   intensity: number;
+  grading: GradingPreset;
 }
 
 export interface Translation {
@@ -70,4 +73,14 @@ export interface Translation {
   resetTuning: string;
   feelingLucky: string;
   showOriginal: string;
+  hideControls: string;
+  showControls: string;
+  settingsSaved: string;
+  colorGrading: string;
+  cinematic: string;
+  vintage: string;
+  vibrant: string;
+  sepia: string;
+  none: string;
+  sendFeedback: string;
 }
