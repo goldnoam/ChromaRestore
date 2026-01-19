@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Language, ImageItem } from './types';
+import { Language, ImageItem, RestoreParams } from './types';
 import { translations } from './i18n';
 import { processImageLocally, fileToBase64 } from './services/geminiService';
 import { ImageCard } from './components/ImageCard';
@@ -11,6 +11,13 @@ interface ViewState {
   zoom: number;
   pan: { x: number; y: number };
 }
+
+const DEFAULT_PARAMS: RestoreParams = {
+  temp: 15,
+  saturation: 1.25,
+  contrast: 1.15,
+  intensity: 1.0
+};
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
@@ -30,6 +37,10 @@ const App: React.FC = () => {
   const [showOriginalInModal, setShowOriginalInModal] = useState(false);
   const [viewStates, setViewStates] = useState<Record<string, ViewState>>({});
   
+  // Tuning parameters for current selected image
+  const [tuningParams, setTuningParams] = useState<RestoreParams>(DEFAULT_PARAMS);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const isDraggingImage = useRef(false);
@@ -58,6 +69,22 @@ const App: React.FC = () => {
     }
   }, [zoomLevel, panOffset, selectedIndex, images]);
 
+  const processSingle = useCallback(async (item: ImageItem, params: RestoreParams = DEFAULT_PARAMS) => {
+    try {
+      const base64 = await fileToBase64(item.file);
+      const resultUrl = await processImageLocally(base64, item.file.type, params);
+      
+      setImages(prev => prev.map(img => 
+        img.id === item.id ? { ...img, status: 'completed', resultUrl, destination: targetLabel } : img
+      ));
+    } catch (err: any) {
+      const errorMessage = err?.message || String(err);
+      setImages(prev => prev.map(img => 
+        img.id === item.id ? { ...img, status: 'error', error: errorMessage } : img
+      ));
+    }
+  }, [targetLabel]);
+
   const processNextPending = useCallback(async () => {
     const nextItem = images.find(img => img.status === 'pending');
     if (!nextItem || isProcessing) return;
@@ -67,30 +94,14 @@ const App: React.FC = () => {
       img.id === nextItem.id ? { ...img, status: 'processing', error: undefined } : img
     ));
 
-    try {
-      const base64 = await fileToBase64(nextItem.file);
-      // Processing locally - no API key required
-      const resultUrl = await processImageLocally(base64, nextItem.file.type);
-      
-      // Simulate a tiny delay for visual feedback of "restoring"
-      await new Promise(r => setTimeout(r, 400));
-
-      setImages(prev => prev.map(img => 
-        img.id === nextItem.id ? { ...img, status: 'completed', resultUrl, destination: targetLabel } : img
-      ));
-      
-      if (targetLabel.trim() && !usedLabels.includes(targetLabel.trim())) {
-        setUsedLabels(prev => [targetLabel.trim(), ...prev].slice(0, 15));
-      }
-    } catch (err: any) {
-      const errorMessage = err?.message || String(err);
-      setImages(prev => prev.map(img => 
-        img.id === nextItem.id ? { ...img, status: 'error', error: errorMessage } : img
-      ));
-    } finally {
-      setIsProcessing(false);
+    await processSingle(nextItem, DEFAULT_PARAMS);
+    
+    if (targetLabel.trim() && !usedLabels.includes(targetLabel.trim())) {
+      setUsedLabels(prev => [targetLabel.trim(), ...prev].slice(0, 15));
     }
-  }, [images, isProcessing, targetLabel, usedLabels]);
+    
+    setIsProcessing(false);
+  }, [images, isProcessing, targetLabel, usedLabels, processSingle]);
 
   useEffect(() => {
     processNextPending();
@@ -105,6 +116,14 @@ const App: React.FC = () => {
       status: 'pending'
     }));
     setImages(prev => [...prev, ...newImages]);
+  };
+
+  const applyTuning = async () => {
+    if (selectedIndex === null) return;
+    const item = images[selectedIndex];
+    setIsReprocessing(true);
+    await processSingle(item, tuningParams);
+    setIsReprocessing(false);
   };
 
   const handleShare = (item: ImageItem) => {
@@ -254,6 +273,8 @@ const App: React.FC = () => {
     } else {
       resetView();
     }
+    // Reset tuning params for new selection
+    setTuningParams(DEFAULT_PARAMS);
   };
 
   return (
@@ -442,128 +463,148 @@ const App: React.FC = () => {
       {selectedIndex !== null && images[selectedIndex] && (
         <div 
           ref={modalRef} 
-          className={`fixed inset-0 z-50 flex flex-col backdrop-blur-3xl animate-in fade-in duration-300 overflow-hidden ${theme === 'dark' ? 'bg-slate-950/98' : 'bg-slate-50/95'}`} 
+          className={`fixed inset-0 z-50 flex flex-col md:flex-row backdrop-blur-3xl animate-in fade-in duration-300 overflow-hidden ${theme === 'dark' ? 'bg-slate-950/98' : 'bg-slate-50/95'}`} 
           onClick={() => setSelectedIndex(null)}
-          onWheel={handleWheel}
         >
-          <div className={`absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between border-b theme-border transition-all ${isFullScreen ? 'opacity-40 hover:opacity-100 bg-slate-900/30' : 'backdrop-blur-xl theme-bg-card'}`} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 truncate">
-               <span className={`text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>{images[selectedIndex].file.name}</span>
-               {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse tracking-widest bg-indigo-500/10 px-2 py-1 rounded">FULLSCREEN</span>}
-            </div>
-            <div className="flex items-center gap-3">
-              {images[selectedIndex].resultUrl && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setShowOriginalInModal(!showOriginalInModal); }} 
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-400' : 'theme-bg-app theme-text-main theme-border hover:bg-indigo-500/10'}`}
-                  title={showOriginalInModal ? t.result : t.original}
-                >
-                  {showOriginalInModal ? t.result : t.original}
-                </button>
-              )}
-              <button 
-                onClick={(e) => { e.stopPropagation(); exportSingle(images[selectedIndex!]); }} 
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.1em] disabled:opacity-50 transition-colors border border-indigo-400 shadow-lg"
-                disabled={!images[selectedIndex].resultUrl}
-                title={t.export}
-              >
-                {t.export}
-              </button>
-              <div className="w-px h-6 theme-border mx-1"></div>
-              <button 
-                onClick={() => setSelectedIndex(null)} 
-                className="p-2 theme-text-main hover:text-rose-400 transition-colors"
-                title={t.close}
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div 
-              className="relative transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing" 
-              style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}
-              onMouseDown={handleMouseDown}
-            >
-              <img 
-                src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
-                alt="Restored Preview" 
-                draggable={false}
-                className={`max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] border theme-border select-none ${theme === 'dark' ? 'shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]' : 'shadow-2xl'}`} 
-              />
-              {images[selectedIndex].status === 'error' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-950/60 backdrop-blur-md rounded-2xl md:rounded-[2rem] p-8 text-center border-2 border-rose-500/20">
-                   <div className="w-20 h-20 bg-rose-500/30 rounded-full flex items-center justify-center mb-6 border border-rose-500/50 shadow-2xl animate-bounce">
-                      <svg className="w-10 h-10 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                   </div>
-                   <h4 className="text-2xl font-black text-rose-300 mb-3 uppercase tracking-widest drop-shadow-lg">{t.error}</h4>
-                   <p className="text-slate-100 text-sm max-w-lg bg-black/60 p-6 rounded-2xl border border-white/10 shadow-3xl font-mono leading-relaxed backdrop-blur-lg">
-                     {images[selectedIndex].error || "Processing failed. Local engine encountered an issue."}
-                   </p>
+          {/* Main Viewer Area */}
+          <div className="flex-1 relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+             <div className={`h-16 px-6 flex items-center justify-between border-b theme-border transition-all ${isFullScreen ? 'opacity-40 hover:opacity-100 bg-slate-900/30' : 'backdrop-blur-xl theme-bg-card'}`}>
+                <div className="flex items-center gap-3 truncate">
+                  <span className={`text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>{images[selectedIndex].file.name}</span>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onMouseDown={() => setShowOriginalInModal(true)}
+                    onMouseUp={() => setShowOriginalInModal(false)}
+                    onMouseLeave={() => setShowOriginalInModal(false)}
+                    onTouchStart={() => setShowOriginalInModal(true)}
+                    onTouchEnd={() => setShowOriginalInModal(false)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-400' : 'theme-bg-app theme-text-main theme-border hover:bg-indigo-500/10'}`}
+                    title={t.beforeAfter}
+                  >
+                    {t.beforeAfter}
+                  </button>
+                  <button 
+                    onClick={() => setSelectedIndex(null)} 
+                    className="p-2 theme-text-main hover:text-rose-400 transition-colors"
+                    title={t.close}
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+             </div>
+
+             <div className="flex-1 flex items-center justify-center p-4 md:p-8" onWheel={handleWheel}>
+                <div 
+                  className="relative transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing" 
+                  style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}
+                  onMouseDown={handleMouseDown}
+                >
+                  <img 
+                    src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
+                    alt="Restored Preview" 
+                    draggable={false}
+                    className={`max-w-full max-h-[75vh] object-contain rounded-2xl md:rounded-[2rem] border theme-border select-none ${theme === 'dark' ? 'shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]' : 'shadow-2xl'}`} 
+                  />
+                  {isReprocessing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-2xl md:rounded-[2rem]">
+                      <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+             </div>
+
+             <div className="h-24 px-8 flex items-center justify-center gap-8">
+                <div className={`flex items-center gap-4 px-6 py-3 rounded-full border shadow-xl ${theme === 'dark' ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-slate-200'}`}>
+                  <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} className="p-2 theme-text-muted hover:text-indigo-400 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg></button>
+                  <span className="text-[10px] font-black w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
+                  <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} className="p-2 theme-text-muted hover:text-indigo-400 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button>
+                  <div className="w-px h-6 theme-border"></div>
+                  <button onClick={toggleFullScreen} className="p-2 theme-text-muted hover:text-indigo-400 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg></button>
+                </div>
+             </div>
           </div>
 
-          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-5 transition-all duration-500 ${isFullScreen ? 'bottom-12 scale-110' : ''}`} onClick={e => e.stopPropagation()}>
-            <div className={`flex items-center gap-6 px-8 py-5 rounded-[2.5rem] border shadow-3xl transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/80 border-white/10 backdrop-blur-xl' : 'bg-white/90 border-slate-200 backdrop-blur-xl'}`}>
-              <button 
-                onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} 
-                className={`p-4 rounded-2xl border transition-all shadow-lg active:scale-90 ${theme === 'dark' ? 'bg-slate-800 text-slate-300 hover:bg-indigo-600 hover:text-white border-white/5' : 'bg-slate-100 text-slate-700 hover:bg-indigo-500 hover:text-white border-slate-200'}`}
-                title={t.zoomOut}
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
-              </button>
-              
-              <div className="flex flex-col items-center gap-2 min-w-[140px]">
-                 <input 
-                   type="range" 
-                   min="1" 
-                   max="8" 
-                   step="0.01" 
-                   value={zoomLevel} 
-                   onChange={(e) => setZoomLevel(parseFloat(e.target.value))} 
-                   className="w-full accent-indigo-400 h-2 rounded-full cursor-pointer hover:accent-indigo-300 transition-all shadow-inner" 
-                   title={t.zoomLevel}
-                 />
-                 <span className={`text-[10px] font-black uppercase tracking-widest ${theme === 'dark' ? 'text-indigo-200' : 'text-indigo-600'}`}>{t.zoomLevel}: {Math.round(zoomLevel * 100)}%</span>
-              </div>
+          {/* Right Tuning Sidebar */}
+          <div 
+            className={`w-full md:w-80 h-auto md:h-full border-t md:border-t-0 md:border-l theme-border p-6 flex flex-col gap-8 animate-in slide-in-from-right duration-500 overflow-y-auto ${theme === 'dark' ? 'bg-slate-900/50 backdrop-blur-3xl' : 'bg-white/80 backdrop-blur-3xl'}`}
+            onClick={e => e.stopPropagation()}
+          >
+             <div>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] theme-text-muted mb-8">{t.tuning}</h4>
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[11px] font-bold theme-text-main">{t.temperature}</label>
+                      <span className="text-[10px] font-mono text-indigo-400">{tuningParams.temp}</span>
+                    </div>
+                    <input 
+                      type="range" min="-100" max="100" step="1" 
+                      value={tuningParams.temp} 
+                      onChange={e => setTuningParams(p => ({...p, temp: parseInt(e.target.value)}))}
+                      className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[11px] font-bold theme-text-main">{t.saturation}</label>
+                      <span className="text-[10px] font-mono text-indigo-400">{tuningParams.saturation.toFixed(2)}x</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="3" step="0.05" 
+                      value={tuningParams.saturation} 
+                      onChange={e => setTuningParams(p => ({...p, saturation: parseFloat(e.target.value)}))}
+                      className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[11px] font-bold theme-text-main">{t.contrast}</label>
+                      <span className="text-[10px] font-mono text-indigo-400">{tuningParams.contrast.toFixed(2)}x</span>
+                    </div>
+                    <input 
+                      type="range" min="0.5" max="2" step="0.05" 
+                      value={tuningParams.contrast} 
+                      onChange={e => setTuningParams(p => ({...p, contrast: parseFloat(e.target.value)}))}
+                      className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[11px] font-bold theme-text-main">{t.intensity}</label>
+                      <span className="text-[10px] font-mono text-indigo-400">{Math.round(tuningParams.intensity * 100)}%</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="1" step="0.01" 
+                      value={tuningParams.intensity} 
+                      onChange={e => setTuningParams(p => ({...p, intensity: parseFloat(e.target.value)}))}
+                      className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+             </div>
 
-              <button 
-                onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} 
-                className={`p-4 rounded-2xl border transition-all shadow-lg active:scale-90 ${theme === 'dark' ? 'bg-slate-800 text-slate-300 hover:bg-indigo-600 hover:text-white border-white/5' : 'bg-slate-100 text-slate-700 hover:bg-indigo-500 hover:text-white border-slate-200'}`}
-                title={t.zoomIn}
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-              </button>
-
-              <div className="w-px h-10 theme-border hidden sm:block"></div>
-
-              <button 
-                onClick={toggleFullScreen}
-                className={`p-4 rounded-2xl border transition-all hidden sm:block shadow-lg active:scale-95 ${theme === 'dark' ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-white/10' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200'} ${isFullScreen ? 'ring-2 ring-indigo-500' : ''}`}
-                title={t.fullScreen}
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-              </button>
-            </div>
-            
-            <button 
-              onClick={resetView} 
-              className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl border ${theme === 'dark' ? 'bg-slate-950/80 text-indigo-400 border-white/5 hover:text-indigo-200' : 'bg-white text-indigo-600 border-slate-200 hover:bg-slate-50'}`}
-              title={t.resetView}
-            >
-              {t.resetView}
-            </button>
+             <div className="mt-auto space-y-4">
+                <button 
+                  onClick={applyTuning}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  {t.reprocess}
+                </button>
+                <button 
+                  onClick={() => exportSingle(images[selectedIndex])}
+                  className="w-full py-4 theme-bg-app border theme-border theme-text-main hover:bg-slate-800/50 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all"
+                >
+                  {t.export}
+                </button>
+             </div>
           </div>
         </div>
       )}
 
       <footer className="py-16 text-center opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by ChromaRestore Local Engine</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by ChromaRestore Adaptive Engine v2.0</p>
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">© 2026 Privacy-First Restoration Systems</p>
       </footer>
     </div>

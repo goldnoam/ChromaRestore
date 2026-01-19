@@ -43,7 +43,14 @@ export const translations: Record<Language, Translation> = {
     noResults: 'No images match your search',
     exportCompleted: 'Export Completed',
     completedCount: '{count} Completed',
-    totalImages: '{count} Images'
+    totalImages: '{count} Images',
+    tuning: 'Color Tuning',
+    temperature: 'Temperature',
+    saturation: 'Saturation',
+    contrast: 'Contrast',
+    intensity: 'Intensity',
+    reprocess: 'Apply Changes',
+    beforeAfter: 'Hold to see Before'
   },
   he: {
     title: 'ChromaRestore Pro',
@@ -87,7 +94,14 @@ export const translations: Record<Language, Translation> = {
     noResults: 'לא נמצאו תמונות התואמות לחיפוש',
     exportCompleted: 'ייצא משוחזרים',
     completedCount: '{count} הושלמו',
-    totalImages: '{count} תמונות'
+    totalImages: '{count} תמונות',
+    tuning: 'כיוונון צבע',
+    temperature: 'טמפרטורה',
+    saturation: 'רוויה',
+    contrast: 'ניגודיות',
+    intensity: 'עוצמה',
+    reprocess: 'החל שינויים',
+    beforeAfter: 'החזק למקור'
   },
   zh: {
     title: 'ChromaRestore Pro',
@@ -131,7 +145,14 @@ export const translations: Record<Language, Translation> = {
     noResults: '没有符合搜索条件的图像',
     exportCompleted: '导出已完成项目',
     completedCount: '{count} 已完成',
-    totalImages: '{count} 图像'
+    totalImages: '{count} 图像',
+    tuning: '色彩调整',
+    temperature: '温度',
+    saturation: '饱和度',
+    contrast: '对比度',
+    intensity: '强度',
+    reprocess: '应用更改',
+    beforeAfter: '按住查看对比'
   },
   hi: {
     title: 'ChromaRestore Pro',
@@ -175,7 +196,14 @@ export const translations: Record<Language, Translation> = {
     noResults: 'आपकी खोज से कोई छवि मेल नहीं खाती',
     exportCompleted: 'पूर्ण निर्यात करें',
     completedCount: '{count} पूर्ण',
-    totalImages: '{count} चित्र'
+    totalImages: '{count} चित्र',
+    tuning: 'रंग ट्यूनिंग',
+    temperature: 'तापमान',
+    saturation: 'संतृप्ति',
+    contrast: 'विपरीत',
+    intensity: 'तीव्रता',
+    reprocess: 'बदलाव लागू करें',
+    beforeAfter: 'पहले देखने के लिए दबाएं'
   },
   de: {
     title: 'ChromaRestore Pro',
@@ -219,7 +247,14 @@ export const translations: Record<Language, Translation> = {
     noResults: 'Keine Bilder entsprechen Ihrer Suche',
     exportCompleted: 'Abgeschlossene exportieren',
     completedCount: '{count} Abgeschlossen',
-    totalImages: '{count} Bilder'
+    totalImages: '{count} Bilder',
+    tuning: 'Farbeinstellungen',
+    temperature: 'Temperatur',
+    saturation: 'Sättigung',
+    contrast: 'Kontrast',
+    intensity: 'Intensität',
+    reprocess: 'Übernehmen',
+    beforeAfter: 'Gedrückt halten für Vorher'
   },
   es: {
     title: 'ChromaRestore Pro',
@@ -263,7 +298,14 @@ export const translations: Record<Language, Translation> = {
     noResults: 'No hay imágenes que coincidan',
     exportCompleted: 'Exportar Completados',
     completedCount: '{count} Completados',
-    totalImages: '{count} Imágenes'
+    totalImages: '{count} Imágenes',
+    tuning: 'Ajuste de Color',
+    temperature: 'Temperatura',
+    saturation: 'Saturación',
+    contrast: 'Contraste',
+    intensity: 'Intensidad',
+    reprocess: 'Aplicar Cambios',
+    beforeAfter: 'Mantén para ver Original'
   },
   fr: {
     title: 'ChromaRestore Pro',
@@ -307,6 +349,13 @@ export const translations: Record<Language, Translation> = {
     noResults: 'Aucune image ne correspond',
     exportCompleted: 'Exporter Terminés',
     completedCount: '{count} Terminés',
-    totalImages: '{count} Images'
+    totalImages: '{count} Images',
+    tuning: 'Ajustement des Couleurs',
+    temperature: 'Température',
+    saturation: 'Saturation',
+    contrast: 'Contraste',
+    intensity: 'Intensité',
+    reprocess: 'Appliquer',
+    beforeAfter: 'Maintenir pour l\'Original'
   }
 };

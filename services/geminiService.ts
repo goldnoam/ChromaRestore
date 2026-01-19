@@ -1,9 +1,20 @@
 /**
- * Local Image Processor
- * Performs high-performance chroma restoration directly in the browser.
+ * Advanced Local Image Processor
+ * Performs multi-pass adaptive chroma restoration directly in the browser.
  */
 
-export async function processImageLocally(base64Data: string, mimeType: string): Promise<string> {
+export interface RestoreConfig {
+  temp: number;       // -100 to 100
+  saturation: number; // 0 to 2
+  contrast: number;   // 0.5 to 1.5
+  intensity: number;  // 0 to 1
+}
+
+export async function processImageLocally(
+  base64Data: string, 
+  mimeType: string,
+  config: RestoreConfig = { temp: 15, saturation: 1.2, contrast: 1.1, intensity: 1.0 }
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -21,45 +32,68 @@ export async function processImageLocally(base64Data: string, mimeType: string):
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
 
-      // Local Chroma Restoration Algorithm (Luminance Mapping)
+      const { temp, saturation, contrast, intensity } = config;
+      
+      // Calculate color offsets based on "Temperature"
+      // Temp > 0: Warmer (Skin/Sun), Temp < 0: Cooler (Sky/Shadows)
+      const rOffset = temp > 0 ? temp * 0.4 : temp * 0.1;
+      const bOffset = temp < 0 ? Math.abs(temp) * 0.5 : -temp * 0.2;
+
       for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
 
-        // Standard Luminance calculation
-        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        // 1. Calculate Perceptual Luminance
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        const normalizedLum = lum / 255;
 
-        // Apply heuristic color mapping based on luminance ranges
-        let newR, newG, newB;
+        // 2. Multi-pass Chroma Mapping
+        // We use a sigmoid-like curve to determine how much "fake" color to inject
+        let targetR, targetG, targetB;
 
-        if (lum < 50) {
-          // Deep Shadows: Cool, deep blue/black tones
-          newR = lum * 0.7;
-          newG = lum * 0.8;
-          newB = lum * 1.1;
-        } else if (lum < 130) {
-          // Mid-tones (Low): Earthy, skin, or foliage tones
-          // Heuristic: Boost warm tones for organic look
-          newR = lum * 1.25;
-          newG = lum * 1.05;
-          newB = lum * 0.85;
-        } else if (lum < 200) {
-          // Mid-tones (High): Warm sunlight / sky tones
-          newR = lum * 1.1;
-          newG = lum * 1.15;
-          newB = lum * 1.3;
+        if (normalizedLum < 0.25) {
+          // Deep Shadows: Naturally cooler, less saturated
+          targetR = lum * 0.8;
+          targetG = lum * 0.9;
+          targetB = lum * 1.2;
+        } else if (normalizedLum < 0.55) {
+          // Midtones (Low): Human skin / Earth tones range
+          targetR = lum * 1.35;
+          targetG = lum * 1.15;
+          targetB = lum * 0.9;
+        } else if (normalizedLum < 0.85) {
+          // Midtones (High): Bright environments / Sky
+          targetR = lum * 1.1;
+          targetG = lum * 1.2;
+          targetB = lum * 1.4;
         } else {
-          // Highlights: Pure white/warm light
-          newR = Math.min(255, lum * 1.05);
-          newG = Math.min(255, lum * 1.05);
-          newB = lum;
+          // Highlights: Neutral white with slight warmth
+          targetR = lum * 1.05;
+          targetG = lum * 1.05;
+          targetB = lum * 1.0;
         }
 
-        // Apply a subtle saturation boost and contrast adjustment
-        data[i] = Math.max(0, Math.min(255, newR));
-        data[i + 1] = Math.max(0, Math.min(255, newG));
-        data[i + 2] = Math.max(0, Math.min(255, newB));
+        // 3. Blend based on Intensity and Apply User Overrides (Temp)
+        let finalR = r * (1 - intensity) + (targetR + rOffset) * intensity;
+        let finalG = g * (1 - intensity) + targetG * intensity;
+        let finalB = b * (1 - intensity) + (targetB + bOffset) * intensity;
+
+        // 4. Contrast Adjustment
+        finalR = ((finalR / 255 - 0.5) * contrast + 0.5) * 255;
+        finalG = ((finalG / 255 - 0.5) * contrast + 0.5) * 255;
+        finalB = ((finalB / 255 - 0.5) * contrast + 0.5) * 255;
+
+        // 5. Saturation Boost
+        const finalLum = 0.299 * finalR + 0.587 * finalG + 0.114 * finalB;
+        finalR = finalLum + (finalR - finalLum) * saturation;
+        finalG = finalLum + (finalG - finalLum) * saturation;
+        finalB = finalLum + (finalB - finalLum) * saturation;
+
+        // Clamp values
+        data[i] = Math.max(0, Math.min(255, finalR));
+        data[i + 1] = Math.max(0, Math.min(255, finalG));
+        data[i + 2] = Math.max(0, Math.min(255, finalB));
       }
 
       ctx.putImageData(imageData, 0, 0);

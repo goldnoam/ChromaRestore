@@ -10,6 +10,13 @@ export interface ImageItem {
   destination?: string;
 }
 
+export interface RestoreParams {
+  temp: number;
+  saturation: number;
+  contrast: number;
+  intensity: number;
+}
+
 export interface Translation {
   title: string;
   subtitle: string;
@@ -53,4 +60,11 @@ export interface Translation {
   exportCompleted: string;
   completedCount: string;
   totalImages: string;
+  tuning: string;
+  temperature: string;
+  saturation: string;
+  contrast: string;
+  intensity: string;
+  reprocess: string;
+  beforeAfter: string;
 }
