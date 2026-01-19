@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Language, ImageItem } from './types';
 import { translations } from './i18n';
@@ -89,8 +88,9 @@ const App: React.FC = () => {
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (selectedIndex === null) return;
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoomLevel(prev => Math.min(Math.max(prev + delta, 1), 5));
+    // Normalize delta for different browsers/mice
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    setZoomLevel(prev => Math.min(Math.max(prev + delta, 1), 6));
   }, [selectedIndex]);
 
   const toggleFullScreen = useCallback(() => {

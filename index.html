@@ -35,8 +35,8 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Use a root-relative path and specify type: 'module' to ensure correct loading in Vite/Vercel environments
-        navigator.serviceWorker.register('/sw.js', { type: 'module' })
+        // Using relative path without leading slash for better compatibility with Vercel/Static hosts
+        navigator.serviceWorker.register('sw.js')
           .then(reg => console.debug('SW registered:', reg.scope))
           .catch(err => console.debug('SW registration failed:', err));
       });

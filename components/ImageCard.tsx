@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ImageItem, Translation } from '../types';
 
