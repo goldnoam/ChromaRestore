@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chroma-restore-v12';
+const CACHE_NAME = 'chroma-restore-v13';
 const ASSETS = [
   './',
   './index.html',

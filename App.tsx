@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Language, ImageItem, RestoreParams, GradingPreset, EngineType, Translation } from './types';
 import { translations } from './i18n';
@@ -473,11 +472,15 @@ const App: React.FC = () => {
              <div className="h-16 px-6 flex items-center justify-between border-b theme-border backdrop-blur-xl theme-bg-card z-10">
                 <span className="text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border">{images[selectedIndex].file.name}</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={toggleFullscreen} className={`p-2 rounded-xl transition-all border theme-border ${isFullscreen ? 'bg-indigo-600 text-white border-indigo-500' : 'theme-bg-app theme-text-main'}`} data-tooltip={t.fullScreen}>
-                    {isFullscreen ? '⤦' : '⤢'}
+                  <button onClick={toggleFullscreen} className={`p-2 rounded-xl transition-all border theme-border flex items-center justify-center w-10 h-10 ${isFullscreen ? 'bg-indigo-600 text-white border-indigo-500' : 'theme-bg-app theme-text-main hover:bg-slate-100 dark:hover:bg-slate-800'}`} data-tooltip={t.fullScreen}>
+                    {isFullscreen ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5" /></svg>
+                    )}
                   </button>
-                  <button onMouseDown={() => setShowOriginalInModal(true)} onMouseUp={() => setShowOriginalInModal(false)} onTouchStart={() => setShowOriginalInModal(true)} onTouchEnd={() => setShowOriginalInModal(false)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${showOriginalInModal ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main theme-border'}`} data-tooltip={t.beforeAfter}>{t.beforeAfter}</button>
-                  <button onClick={() => setSelectedIndex(null)} className="p-2 theme-text-main hover:text-rose-400" data-tooltip={t.close}>✖</button>
+                  <button onMouseDown={() => setShowOriginalInModal(true)} onMouseUp={() => setShowOriginalInModal(false)} onTouchStart={() => setShowOriginalInModal(true)} onTouchEnd={() => setShowOriginalInModal(false)} className={`px-4 py-2 h-10 rounded-xl text-[10px] font-black uppercase border transition-all ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-500' : 'theme-bg-app theme-text-main theme-border hover:bg-slate-100 dark:hover:bg-slate-800'}`} data-tooltip={t.beforeAfter}>{t.beforeAfter}</button>
+                  <button onClick={() => setSelectedIndex(null)} className="p-2 w-10 h-10 flex items-center justify-center rounded-xl theme-text-main hover:text-rose-400 hover:bg-rose-500/10 transition-all" data-tooltip={t.close}>✖</button>
                 </div>
              </div>
              
@@ -504,9 +507,9 @@ const App: React.FC = () => {
 
              <div className="h-20 flex items-center justify-center gap-6 z-10">
                 <div className="flex items-center gap-4 px-6 py-2 rounded-full border theme-border shadow-xl theme-bg-card">
-                  <button onClick={() => setZoomLevel(p => Math.max(p - 0.2, 0.5))} data-tooltip={t.zoomOut}>➖</button>
-                  <button onClick={() => { setZoomLevel(1); setPanOffset({x:0,y:0}); }} className="text-[10px] font-black" data-tooltip={t.resetView}>{Math.round(zoomLevel * 100)}%</button>
-                  <button onClick={() => setZoomLevel(p => Math.min(p + 0.2, 10))} data-tooltip={t.zoomIn}>➕</button>
+                  <button onClick={() => setZoomLevel(p => Math.max(p - 0.2, 0.5))} className="hover:text-indigo-500 transition-colors p-1" data-tooltip={t.zoomOut}>➖</button>
+                  <button onClick={() => { setZoomLevel(1); setPanOffset({x:0,y:0}); }} className="text-[10px] font-black hover:text-indigo-500 transition-colors" data-tooltip={t.resetView}>{Math.round(zoomLevel * 100)}%</button>
+                  <button onClick={() => setZoomLevel(p => Math.min(p + 0.2, 10))} className="hover:text-indigo-500 transition-colors p-1" data-tooltip={t.zoomIn}>➕</button>
                 </div>
              </div>
           </div>
@@ -569,11 +572,11 @@ const App: React.FC = () => {
 
              <div className="mt-auto space-y-3 pb-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={handleResetTuning} className="p-3 rounded-2xl border theme-border theme-text-muted text-[9px] font-black uppercase" data-tooltip={t.resetTuning}>🔄 {t.resetTuning.split(' ')[0]}</button>
-                  <button onClick={handleShowOriginal} className="p-3 rounded-2xl border theme-border theme-text-muted text-[9px] font-black uppercase" data-tooltip={t.showOriginal}>🖼️ {t.original}</button>
+                  <button onClick={handleResetTuning} className="p-3 rounded-2xl border theme-border theme-text-muted text-[9px] font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" data-tooltip={t.resetTuning}>🔄 {t.resetTuning.split(' ')[0]}</button>
+                  <button onClick={handleShowOriginal} className="p-3 rounded-2xl border theme-border theme-text-muted text-[9px] font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" data-tooltip={t.showOriginal}>🖼️ {t.original}</button>
                 </div>
-                <button onClick={handleFeelingLucky} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase active:scale-95 transition-all" data-tooltip={t.feelingLucky}>✨ {t.feelingLucky}</button>
-                <button onClick={() => exportSingle(images[selectedIndex])} className="w-full py-4 theme-bg-app border theme-border theme-text-main rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all" data-tooltip={t.export}>💾 {t.export}</button>
+                <button onClick={handleFeelingLucky} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase active:scale-95 transition-all shadow-lg shadow-indigo-500/20" data-tooltip={t.feelingLucky}>✨ {t.feelingLucky}</button>
+                <button onClick={() => exportSingle(images[selectedIndex])} className="w-full py-4 theme-bg-app border theme-border theme-text-main rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all hover:bg-slate-100 dark:hover:bg-slate-800" data-tooltip={t.export}>💾 {t.export}</button>
              </div>
           </div>
         </div>

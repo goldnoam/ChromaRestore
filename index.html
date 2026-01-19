@@ -17,39 +17,52 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
   
   <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+  {
+    "imports": {
+      "react": "https://esm.sh/react@^19.2.3",
+      "react-dom": "https://esm.sh/react-dom@^19.2.3",
+      "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
+      "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+      "react/": "https://esm.sh/react@^19.2.3/"
+    }
   }
-}
-</script>
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased">
   <div id="root"></div>
   <script type="module" src="./index.tsx"></script>
   
-  <!-- AdSense with enhanced error isolation -->
   <script>
+    // Robust AdSense loader that fails silently if blocked by client
     (function() {
-      const adScript = document.createElement('script');
-      adScript.async = true;
-      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0274741291001288";
-      adScript.crossOrigin = "anonymous";
-      adScript.onerror = function() {
-        console.warn('AdSense blocked or unavailable. Proceeding with fallback UI.');
+      const adClient = "ca-pub-0274741291001288";
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`;
+      script.crossOrigin = "anonymous";
+      script.onerror = () => {
+        // Silent catch for ERR_BLOCKED_BY_CLIENT
+        window.adsBlocked = true;
       };
-      document.head.appendChild(adScript);
+      document.head.appendChild(script);
     })();
 
+    // Service Worker registration with versioning to avoid 404 on stale bundles
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js', { scope: './' })
-          .then(reg => console.debug('ServiceWorker registered'))
-          .catch(err => console.debug('ServiceWorker registration failed:', err));
+          .then(reg => {
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // New version available, force reload if needed
+                  window.location.reload();
+                }
+              };
+            };
+          })
+          .catch(() => {});
       });
     }
   </script>
