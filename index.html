@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaRestore Pro - Professional Image restoration</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%236366f1;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23a855f7;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23g)'/%3E%3Cpath d='M30 40 L70 40 L70 60 L30 60 Z' fill='white' opacity='0.2'/%3E%3Ccircle cx='50' cy='50' r='20' stroke='white' stroke-width='8' fill='none'/%3E%3Ccircle cx='50' cy='50' r='5' fill='white'/%3E%3C/svg%3E">
-  
-  <!-- Tailwind CSS Configuration -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#020617">
+
+  <!-- Tailwind CSS Configuration - Script first, then config -->
+  <script src="https://cdn.tailwindcss.com/3.4.1"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -25,7 +27,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Google AdSense - Initialized silently -->
+  <!-- Google AdSense - Initialized silently to avoid console spam when blocked -->
   <script>
     window.adsbygoogle = window.adsbygoogle || [];
     (function() {
@@ -33,23 +35,19 @@
       s.async = true;
       s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0274741291001288";
       s.crossOrigin = "anonymous";
-      s.setAttribute('data-ad-client', 'ca-pub-0274741291001288');
+      s.onerror = () => {}; // Silently fail on block
       document.head.appendChild(s);
     })();
   </script>
 
   <style>
-    :root {
-      --primary: #6366f1;
-    }
+    :root { --primary: #6366f1; }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #020617; /* Slate-950 */
+      background-color: #020617;
       overflow-x: hidden;
     }
-    [dir="rtl"] {
-      font-family: 'Heebo', sans-serif;
-    }
+    [dir="rtl"] { font-family: 'Heebo', sans-serif; }
     .lang-zh { font-family: 'Noto Sans SC', sans-serif; }
     .lang-hi { font-family: 'Noto Sans Devanagari', sans-serif; }
 
@@ -68,17 +66,11 @@
       background-color: rgba(99, 102, 241, 0.08) !important;
     }
     
-    .drag-content-pulsing {
-      animation: pulse-content 1.5s infinite ease-in-out;
-    }
+    .drag-content-pulsing { animation: pulse-content 1.5s infinite ease-in-out; }
 
     @keyframes shimmer {
       0% { transform: translateX(-100%); }
       100% { transform: translateX(100%); }
-    }
-    .shimmer-effect {
-      position: relative;
-      overflow: hidden;
     }
     .shimmer-effect::after {
       content: "";
@@ -88,33 +80,30 @@
       animation: shimmer 2s infinite;
     }
     
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #020617;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 5px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #334155;
-    }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
   </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0"
+  <script type="importmap">
+  {
+    "imports": {
+      "react/": "https://esm.sh/react@^19.2.3/",
+      "react": "https://esm.sh/react@^19.2.3",
+      "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+      "@google/genai": "https://esm.sh/@google/genai@^1.37.0"
+    }
   }
-}
-</script>
+  </script>
 </head>
 <body class="bg-slate-950 text-slate-100 selection:bg-indigo-500/30">
   <div id="root"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {});
+      });
+    }
+  </script>
 </body>
 </html>

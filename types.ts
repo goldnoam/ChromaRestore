@@ -7,6 +7,7 @@ export interface ImageItem {
   status: 'pending' | 'processing' | 'completed' | 'error';
   resultUrl?: string;
   error?: string;
+  destination?: string;
 }
 
 export interface Translation {
@@ -23,6 +24,7 @@ export interface Translation {
   error: string;
   targetFolder: string;
   targetFolderPlaceholder: string;
+  pickFolder: string;
   languageName: string;
   languageSelect: string;
   offlineReady: string;
