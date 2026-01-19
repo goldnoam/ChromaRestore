@@ -1,15 +1,31 @@
-:root { --primary: #6366f1; }
+@import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css');
+
+:root { 
+  --primary: #6366f1; 
+  --bg-dark: #020617;
+}
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: #020617;
+  background-color: var(--bg-dark);
   overflow-x: hidden;
+  color: #f1f5f9;
 }
 
+/* RTL Support */
 [dir="rtl"] { font-family: 'Heebo', sans-serif; }
 .lang-zh { font-family: 'Noto Sans SC', sans-serif; }
 .lang-hi { font-family: 'Noto Sans Devanagari', sans-serif; }
 
+/* Custom Colors and Utilities to match Slate-900/950 */
+.bg-slate-900 { background-color: #0f172a; }
+.bg-slate-950 { background-color: #020617; }
+.border-slate-800 { border-color: #1e293b; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-slate-700 { color: #334155; }
+
+/* Animations */
 @keyframes pulse-border {
   0%, 100% { border-color: rgba(99, 102, 241, 0.4); border-width: 2px; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
   50% { border-color: rgba(99, 102, 241, 1); border-width: 2px; box-shadow: 0 0 20px 0 rgba(99, 102, 241, 0.2); }
@@ -20,17 +36,17 @@ body {
   50% { transform: scale(1.02); opacity: 0.8; }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 .drag-pulsing {
   animation: pulse-border 1.5s infinite ease-in-out;
   background-color: rgba(99, 102, 241, 0.08) !important;
 }
 
 .drag-content-pulsing { animation: pulse-content 1.5s infinite ease-in-out; }
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
 
 .shimmer-effect::after {
   content: "";
@@ -40,7 +56,15 @@ body {
   animation: shimmer 2s infinite;
 }
 
+/* Scrollbar */
 ::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #020617; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* Custom Rounded and Transitions */
+.rounded-2xl { border-radius: 1rem; }
+.rounded-3xl { border-radius: 1.5rem; }
+.rounded-p-lg { border-radius: 2.5rem; }
+.backdrop-blur-xl { backdrop-filter: blur(24px); }
+.backdrop-blur-3xl { backdrop-filter: blur(64px); }
