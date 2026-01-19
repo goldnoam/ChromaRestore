@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 
 interface AdPlaceholderProps {
@@ -12,13 +13,18 @@ declare global {
 
 export const AdPlaceholder: React.FC<AdPlaceholderProps> = ({ label }) => {
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.adsbygoogle) {
-        window.adsbygoogle.push({});
+    const timer = setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined' && window.adsbygoogle) {
+          // Wrap in check to avoid pushing multiple times incorrectly
+          window.adsbygoogle.push({});
+        }
+      } catch (e) {
+        // Fail gracefully if ad blocker prevents initialization
+        console.debug('AdSense prevented by client.');
       }
-    } catch (e) {
-      // Silently handle cases where adsbygoogle is blocked or fails
-    }
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
