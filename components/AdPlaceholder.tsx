@@ -16,14 +16,14 @@ export const AdPlaceholder: React.FC<AdPlaceholderProps> = ({ label }) => {
     const timer = setTimeout(() => {
       try {
         if (typeof window !== 'undefined' && window.adsbygoogle) {
-          // Wrap in check to avoid pushing multiple times incorrectly
+          // Check if it's already an array or initialized
+          window.adsbygoogle = window.adsbygoogle || [];
           window.adsbygoogle.push({});
         }
       } catch (e) {
-        // Fail gracefully if ad blocker prevents initialization
-        console.debug('AdSense prevented by client.');
+        // Silent fail
       }
-    }, 1000);
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -42,7 +42,7 @@ export const AdPlaceholder: React.FC<AdPlaceholderProps> = ({ label }) => {
         <div className="text-slate-500 text-sm font-medium flex flex-col items-center">
           <span className="mb-2 opacity-60 uppercase tracking-widest text-[9px] font-black group-hover:text-indigo-400 transition-colors">{label}</span>
           <div className="w-32 h-1 bg-slate-800 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div className="w-full h-full bg-indigo-500/20 animate-[shimmer_2s_infinite]"></div>
+            <div className="w-full h-full bg-indigo-500/20 animate-pulse"></div>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -7,10 +8,10 @@
   <meta name="description" content="Professional B&W to Color image restoration. 100% local processing, no cloud, no API keys required. Restore family heritage and historic photos instantly.">
   <meta name="keywords" content="image colorization, black and white to color, photo restoration, ai image processing, local ai, chromarestore">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236366f1'/%3E%3Ccircle cx='50' cy='50' r='20' fill='white'/%3E%3C/svg%3E">
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#020617">
 
-  <link rel="stylesheet" href="./index.css">
+  <link rel="stylesheet" href="index.css">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,36 +31,37 @@
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased">
   <div id="root"></div>
-  <script type="module" src="./index.tsx"></script>
+  <script type="module" src="index.tsx"></script>
   
   <script>
-    // Robust AdSense loader that fails silently if blocked by client
+    // Robust AdSense loader
     (function() {
-      const adClient = "ca-pub-0274741291001288";
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`;
-      script.crossOrigin = "anonymous";
-      script.onerror = () => {
-        // Silent catch for ERR_BLOCKED_BY_CLIENT
-        window.adsBlocked = true;
-      };
-      document.head.appendChild(script);
+      try {
+        const adClient = "ca-pub-0274741291001288";
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + adClient;
+        script.crossOrigin = "anonymous";
+        script.onerror = () => { console.debug('AdSense blocked'); };
+        document.head.appendChild(script);
+      } catch (e) {}
     })();
 
-    // Service Worker registration with versioning to avoid 404 on stale bundles
+    // Service Worker registration with cache busting logic
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' })
+        navigator.serviceWorker.register('sw.js', { scope: './' })
           .then(reg => {
             reg.onupdatefound = () => {
               const installingWorker = reg.installing;
-              installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available, force reload if needed
-                  window.location.reload();
-                }
-              };
+              if (installingWorker) {
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New SW version, clear caches and reload
+                    window.location.reload();
+                  }
+                };
+              }
             };
           })
           .catch(() => {});
