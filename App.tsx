@@ -45,6 +45,8 @@ const App: React.FC = () => {
   const modalRef = useRef<HTMLDivElement>(null);
   const isDraggingImage = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
+  const processTimerRef = useRef<number | null>(null);
+  
   const t = translations[lang];
   const isRtl = lang === 'he';
 
@@ -85,6 +87,26 @@ const App: React.FC = () => {
     }
   }, [targetLabel]);
 
+  // Reactive processing loop for real-time slider updates
+  useEffect(() => {
+    if (selectedIndex === null || !images[selectedIndex]) return;
+    
+    // Cleanup previous timer to debounce rapid slider movements
+    if (processTimerRef.current) window.clearTimeout(processTimerRef.current);
+    
+    setIsReprocessing(true);
+    
+    processTimerRef.current = window.setTimeout(async () => {
+      const item = images[selectedIndex!];
+      await processSingle(item, tuningParams);
+      setIsReprocessing(false);
+    }, 50); // Small debounce for smoother UI
+
+    return () => {
+      if (processTimerRef.current) window.clearTimeout(processTimerRef.current);
+    };
+  }, [tuningParams, selectedIndex, processSingle]);
+
   const processNextPending = useCallback(async () => {
     const nextItem = images.find(img => img.status === 'pending');
     if (!nextItem || isProcessing) return;
@@ -118,13 +140,17 @@ const App: React.FC = () => {
     setImages(prev => [...prev, ...newImages]);
   };
 
-  const applyTuning = async () => {
-    if (selectedIndex === null) return;
-    const item = images[selectedIndex];
-    setIsReprocessing(true);
-    await processSingle(item, tuningParams);
-    setIsReprocessing(false);
+  const handleFeelingLucky = () => {
+    setTuningParams({
+      temp: 25 + Math.floor(Math.random() * 20),
+      saturation: 1.4 + (Math.random() * 0.4),
+      contrast: 1.2 + (Math.random() * 0.2),
+      intensity: 1.0
+    });
   };
+
+  const handleResetTuning = () => setTuningParams(DEFAULT_PARAMS);
+  const handleShowOriginal = () => setTuningParams({ ...DEFAULT_PARAMS, intensity: 0 });
 
   const handleShare = (item: ImageItem) => {
     const url = item.resultUrl || item.previewUrl;
@@ -584,17 +610,37 @@ const App: React.FC = () => {
                 </div>
              </div>
 
-             <div className="mt-auto space-y-4">
+             <div className="mt-auto space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                   <button 
+                    onClick={handleResetTuning}
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 transition-all text-[9px] font-black uppercase tracking-widest"
+                    title={t.resetTuning}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    {t.resetTuning.split(' ')[0]}
+                  </button>
+                  <button 
+                    onClick={handleShowOriginal}
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 transition-all text-[9px] font-black uppercase tracking-widest"
+                    title={t.showOriginal}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    {t.original}
+                  </button>
+                </div>
+                
                 <button 
-                  onClick={applyTuning}
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                  onClick={handleFeelingLucky}
+                  className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 border border-indigo-400/30"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                  {t.reprocess}
+                  <span className="text-sm">✨</span>
+                  {t.feelingLucky}
                 </button>
+
                 <button 
                   onClick={() => exportSingle(images[selectedIndex])}
-                  className="w-full py-4 theme-bg-app border theme-border theme-text-main hover:bg-slate-800/50 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all"
+                  className="w-full py-4 theme-bg-app border theme-border theme-text-main hover:bg-slate-800/50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all"
                 >
                   {t.export}
                 </button>

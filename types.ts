@@ -67,4 +67,7 @@ export interface Translation {
   intensity: string;
   reprocess: string;
   beforeAfter: string;
+  resetTuning: string;
+  feelingLucky: string;
+  showOriginal: string;
 }

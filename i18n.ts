@@ -49,8 +49,11 @@ export const translations: Record<Language, Translation> = {
     saturation: 'Saturation',
     contrast: 'Contrast',
     intensity: 'Intensity',
-    reprocess: 'Apply Changes',
-    beforeAfter: 'Hold to see Before'
+    reprocess: 'Reprocess',
+    beforeAfter: 'Hold for Original',
+    resetTuning: 'Reset Sliders',
+    feelingLucky: 'Feeling Lucky',
+    showOriginal: 'Back to B&W'
   },
   he: {
     title: 'ChromaRestore Pro',
@@ -100,8 +103,11 @@ export const translations: Record<Language, Translation> = {
     saturation: 'רוויה',
     contrast: 'ניגודיות',
     intensity: 'עוצמה',
-    reprocess: 'החל שינויים',
-    beforeAfter: 'החזק למקור'
+    reprocess: 'עבד מחדש',
+    beforeAfter: 'החזק למקור',
+    resetTuning: 'אפס מכוונים',
+    feelingLucky: 'נסה מזלך',
+    showOriginal: 'חזרה לשחור-לבן'
   },
   zh: {
     title: 'ChromaRestore Pro',
@@ -151,8 +157,11 @@ export const translations: Record<Language, Translation> = {
     saturation: '饱和度',
     contrast: '对比度',
     intensity: '强度',
-    reprocess: '应用更改',
-    beforeAfter: '按住查看对比'
+    reprocess: '重新处理',
+    beforeAfter: '长按查看对比',
+    resetTuning: '重置调整',
+    feelingLucky: '试试手气',
+    showOriginal: '回退到黑白'
   },
   hi: {
     title: 'ChromaRestore Pro',
@@ -202,8 +211,11 @@ export const translations: Record<Language, Translation> = {
     saturation: 'संतृप्ति',
     contrast: 'विपरीत',
     intensity: 'तीव्रता',
-    reprocess: 'बदलाव लागू करें',
-    beforeAfter: 'पहले देखने के लिए दबाएं'
+    reprocess: 'पुन: प्रोसेस',
+    beforeAfter: 'मूल के लिए दबाएं',
+    resetTuning: 'स्लाइडर्स रीसेट करें',
+    feelingLucky: 'किस्मत आजमाएं',
+    showOriginal: 'ब्लैक एंड व्हाइट पर वापस'
   },
   de: {
     title: 'ChromaRestore Pro',
@@ -253,8 +265,11 @@ export const translations: Record<Language, Translation> = {
     saturation: 'Sättigung',
     contrast: 'Kontrast',
     intensity: 'Intensität',
-    reprocess: 'Übernehmen',
-    beforeAfter: 'Gedrückt halten für Vorher'
+    reprocess: 'Neu berechnen',
+    beforeAfter: 'Halten für Vorher',
+    resetTuning: 'Slider zurücksetzen',
+    feelingLucky: 'Auf gut Glück',
+    showOriginal: 'Zurück zu S/W'
   },
   es: {
     title: 'ChromaRestore Pro',
@@ -304,8 +319,11 @@ export const translations: Record<Language, Translation> = {
     saturation: 'Saturación',
     contrast: 'Contraste',
     intensity: 'Intensidad',
-    reprocess: 'Aplicar Cambios',
-    beforeAfter: 'Mantén para ver Original'
+    reprocess: 'Reprocesar',
+    beforeAfter: 'Mantener para Original',
+    resetTuning: 'Reiniciar Ajustes',
+    feelingLucky: 'Voy a tener suerte',
+    showOriginal: 'Volver a B/N'
   },
   fr: {
     title: 'ChromaRestore Pro',
@@ -337,7 +355,7 @@ export const translations: Record<Language, Translation> = {
     shareSuccess: 'Lien copié dans le presse-papiers !',
     fullScreen: 'Plein Écran (F)',
     resetView: 'Réinitialiser (0)',
-    zoomLevel: 'Nivel de zoom',
+    zoomLevel: 'Zoom arrière (-)',
     zoomIn: 'Zoom avant (+)',
     zoomOut: 'Zoom arrière (-)',
     remove: 'Supprimer l\'image',
@@ -355,7 +373,10 @@ export const translations: Record<Language, Translation> = {
     saturation: 'Saturation',
     contrast: 'Contraste',
     intensity: 'Intensité',
-    reprocess: 'Appliquer',
-    beforeAfter: 'Maintenir pour l\'Original'
+    reprocess: 'Retraiter',
+    beforeAfter: 'Maintenir pour l\'Original',
+    resetTuning: 'Réinitialiser curseurs',
+    feelingLucky: 'J\'ai de la chance',
+    showOriginal: 'Retour en N&B'
   }
 };
