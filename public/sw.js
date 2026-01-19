@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chroma-restore-v3';
+const CACHE_NAME = 'chroma-restore-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -9,10 +9,11 @@ const ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Core assets are hard-cached for offline availability
-      return cache.addAll(ASSETS).catch(err => {
-        console.error('Core caching failed:', err);
-      });
+      return Promise.allSettled(
+        ASSETS.map(url => 
+          cache.add(url).catch(err => console.debug(`Failed to cache ${url}:`, err))
+        )
+      );
     })
   );
 });
@@ -28,18 +29,31 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle standard GET requests
   if (event.request.method !== 'GET') return;
+  
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      // Return cached response if found, otherwise fetch from network
-      return cached || fetch(event.request).catch(() => {
-        // Fallback for navigation requests when offline
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
-      });
+      const networked = fetch(event.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const cacheCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, cacheCopy);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html') || caches.match('/');
+          }
+          return null;
+        });
+
+      return cached || networked;
     })
   );
 });
