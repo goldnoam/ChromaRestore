@@ -35,8 +35,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Using /sw.js to ensure it registers at the root level as per standard PWA practices
-        // This resolves the 404 error when the app is served from the root domain
+        // Absolute path registration to resolve 404 on deployment
         navigator.serviceWorker.register('/sw.js')
           .then(reg => console.debug('ServiceWorker registration successful:', reg.scope))
           .catch(err => console.debug('ServiceWorker registration failed:', err));
