@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 // Added missing Translation import
 import { Language, ImageItem, RestoreParams, GradingPreset, Translation } from './types';
@@ -333,22 +332,34 @@ const App: React.FC = () => {
             <h1 className="text-lg font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-indigo-300">{t.title}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className={`p-2.5 rounded-xl transition-all border shadow-lg theme-border ${theme === 'dark' ? 'bg-slate-800 text-yellow-400 border-slate-700 hover:border-yellow-400/50' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-500/50'}`} aria-label="Toggle Theme">
+            <button 
+              onClick={toggleTheme} 
+              className={`p-2.5 rounded-xl transition-all border shadow-lg theme-border ${theme === 'dark' ? 'bg-slate-800 text-yellow-400 border-slate-700 hover:border-yellow-400/50' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-500/50'}`} 
+              aria-label={t.themeToggle}
+              data-tooltip={t.themeToggle}
+            >
               {theme === 'dark' ? (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
               ) : (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
               )}
             </button>
-            <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className={`border theme-border rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer shadow-sm ${theme === 'dark' ? 'bg-slate-800 text-slate-100 border-slate-700' : 'bg-white text-slate-900 border-slate-200'}`}>
-              <option value="en">English</option>
-              <option value="he">עברית</option>
-              <option value="zh">中文</option>
-              <option value="hi">हिन्दी</option>
-              <option value="de">Deutsch</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-            </select>
+            <div data-tooltip={t.languageSelect}>
+              <select 
+                value={lang} 
+                onChange={(e) => setLang(e.target.value as Language)} 
+                className={`border theme-border rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer shadow-sm ${theme === 'dark' ? 'bg-slate-800 text-slate-100 border-slate-700' : 'bg-white text-slate-900 border-slate-200'}`}
+                aria-label={t.languageSelect}
+              >
+                <option value="en">English</option>
+                <option value="he">עברית</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिन्दी</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+              </select>
+            </div>
           </div>
         </div>
       </header>
@@ -411,11 +422,30 @@ const App: React.FC = () => {
                   <span className={`text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>{images[selectedIndex].file.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setIsControlsVisible(p => !p)} className="p-2.5 rounded-xl border theme-border theme-text-main hover:bg-indigo-500/10 md:hidden">
+                  <button 
+                    onClick={() => setIsControlsVisible(p => !p)} 
+                    className="p-2.5 rounded-xl border theme-border theme-text-main hover:bg-indigo-500/10 md:hidden"
+                    data-tooltip={isControlsVisible ? t.hideControls : t.showControls}
+                  >
                     <svg className={`w-5 h-5 transition-transform ${isControlsVisible ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   </button>
-                  <button onMouseDown={() => setShowOriginalInModal(true)} onMouseUp={() => setShowOriginalInModal(false)} onTouchStart={() => setShowOriginalInModal(true)} onTouchEnd={() => setShowOriginalInModal(false)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${showOriginalInModal ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main theme-border'}`}>{t.beforeAfter}</button>
-                  <button onClick={() => setSelectedIndex(null)} className="p-2 theme-text-main hover:text-rose-400"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                  <button 
+                    onMouseDown={() => setShowOriginalInModal(true)} 
+                    onMouseUp={() => setShowOriginalInModal(false)} 
+                    onTouchStart={() => setShowOriginalInModal(true)} 
+                    onTouchEnd={() => setShowOriginalInModal(false)} 
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${showOriginalInModal ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main theme-border'}`}
+                    data-tooltip={t.beforeAfter}
+                  >
+                    {t.beforeAfter}
+                  </button>
+                  <button 
+                    onClick={() => setSelectedIndex(null)} 
+                    className="p-2 theme-text-main hover:text-rose-400"
+                    data-tooltip={t.close}
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
                 </div>
              </div>
              <div className="flex-1 flex items-center justify-center p-4 md:p-8 overflow-hidden" onWheel={handleWheel}>
@@ -426,10 +456,35 @@ const App: React.FC = () => {
              </div>
              <div className={`h-24 px-8 flex items-center justify-center gap-8 z-10 ${!isControlsVisible ? 'md:flex' : 'hidden md:flex'}`}>
                 <div className={`flex items-center gap-4 px-6 py-3 rounded-full border shadow-xl ${theme === 'dark' ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-slate-200'}`}>
-                  <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} className="p-2 theme-text-muted hover:text-indigo-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg></button>
-                  <span className="text-[10px] font-black w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
-                  <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} className="p-2 theme-text-muted hover:text-indigo-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button>
+                  <button 
+                    onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} 
+                    className="p-2 theme-text-muted hover:text-indigo-400"
+                    data-tooltip={t.zoomOut}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                  </button>
+                  <button 
+                    onClick={resetView}
+                    className="text-[10px] font-black w-12 text-center hover:text-indigo-400 transition-colors"
+                    data-tooltip={t.resetView}
+                  >
+                    {Math.round(zoomLevel * 100)}%
+                  </button>
+                  <button 
+                    onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} 
+                    className="p-2 theme-text-muted hover:text-indigo-400"
+                    data-tooltip={t.zoomIn}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                  </button>
                 </div>
+                <button 
+                  onClick={toggleFullScreen} 
+                  className={`p-3 rounded-full border shadow-xl ${theme === 'dark' ? 'bg-slate-900/80 border-white/10 text-white' : 'bg-white/90 border-slate-200 text-slate-900'} hover:bg-indigo-500 hover:text-white transition-all`}
+                  data-tooltip={t.fullScreen}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                </button>
              </div>
           </div>
 
@@ -470,11 +525,34 @@ const App: React.FC = () => {
 
              <div className="mt-auto space-y-3 pb-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={handleResetTuning} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 text-[9px] font-black uppercase"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>{t.resetTuning.split(' ')[0]}</button>
-                  <button onClick={handleShowOriginal} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 text-[9px] font-black uppercase"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{t.original}</button>
+                  <button 
+                    onClick={handleResetTuning} 
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 text-[9px] font-black uppercase transition-all active:scale-95"
+                    data-tooltip={t.resetTuning}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    {t.resetTuning.split(' ')[0]}
+                  </button>
+                  <button 
+                    onClick={handleShowOriginal} 
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 text-[9px] font-black uppercase transition-all active:scale-95"
+                    data-tooltip={t.showOriginal}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
+                    {t.original}
+                  </button>
                 </div>
-                <button onClick={handleFeelingLucky} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border border-indigo-400/30 active:scale-95"><span className="text-sm">✨</span>{t.feelingLucky}</button>
-                <button onClick={() => exportSingle(images[selectedIndex])} className="w-full py-4 theme-bg-app border theme-border theme-text-main hover:bg-slate-800/50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">{t.export}</button>
+                <button onClick={handleFeelingLucky} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 border border-indigo-400/30 active:scale-95 transition-all" data-tooltip={t.feelingLucky}>
+                  <span className="text-sm">✨</span>
+                  {t.feelingLucky}
+                </button>
+                <button 
+                  onClick={() => exportSingle(images[selectedIndex])} 
+                  className="w-full py-4 theme-bg-app border theme-border theme-text-main hover:bg-slate-800/50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95"
+                  data-tooltip={t.export}
+                >
+                  {t.export}
+                </button>
              </div>
           </div>
         </div>

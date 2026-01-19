@@ -1,4 +1,3 @@
-
 import { Translation, Language } from './types';
 
 export const translations: Record<Language, Translation> = {
@@ -19,6 +18,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: 'Pick Folder',
     languageName: 'English',
     languageSelect: 'Select Language',
+    themeToggle: 'Switch Appearance',
     offlineReady: 'Gemini Professional Engine Active',
     adPlaceholder: 'Support Our Development',
     confirmDownload: 'Confirm export for all processed items?',
@@ -83,6 +83,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: 'בחר תיקייה',
     languageName: 'עברית',
     languageSelect: 'בחר שפה',
+    themeToggle: 'החלף מראה',
     offlineReady: 'מנוע Gemini מקצועי פעיל',
     adPlaceholder: 'תמכו בפיתוח שלנו',
     confirmDownload: 'אשר ייצוא לכל הפריטים שעובדו?',
@@ -147,6 +148,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: '选择文件夹',
     languageName: '中文',
     languageSelect: '选择语言',
+    themeToggle: '切换外观',
     offlineReady: 'Gemini 专业引擎已激活',
     adPlaceholder: '支持我们的开发',
     confirmDownload: '确认导出所有处理过的项目吗？',
@@ -211,6 +213,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: 'फ़ोल्डर चुनें',
     languageName: 'हिन्दी',
     languageSelect: 'भाषा चुनें',
+    themeToggle: 'प्रकटन स्विच करें',
     offlineReady: 'Gemini प्रोफेशनल इंजन सक्रिय',
     adPlaceholder: 'हमारे विकास का समर्थन करें',
     confirmDownload: 'क्या आप सभी प्रोसेस्ड आइटम निर्यात करना चाहते हैं?',
@@ -275,6 +278,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: 'Ordner wählen',
     languageName: 'Deutsch',
     languageSelect: 'Sprache wählen',
+    themeToggle: 'Erscheinungsbild ändern',
     offlineReady: 'Gemini Professional Engine aktiv',
     adPlaceholder: 'Unterstützen Sie uns',
     confirmDownload: 'Export für alle verarbeiteten Elemente bestätigen?',
@@ -339,6 +343,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: 'Elegir carpeta',
     languageName: 'Español',
     languageSelect: 'Seleccionar idioma',
+    themeToggle: 'Cambiar apariencia',
     offlineReady: 'Motor Gemini Profesional Activo',
     adPlaceholder: 'Apoya nuestro desarrollo',
     confirmDownload: '¿Confirmar exportación de todos los elementos?',
@@ -403,6 +408,7 @@ export const translations: Record<Language, Translation> = {
     pickFolder: 'Choisir un dossier',
     languageName: 'Français',
     languageSelect: 'Choisir la langue',
+    themeToggle: 'Changer d\'apparence',
     offlineReady: 'Moteur Professionnel Gemini Actif',
     adPlaceholder: 'Soutenez-nous',
     confirmDownload: 'Confirmer l\'exportation de tous les éléments ?',

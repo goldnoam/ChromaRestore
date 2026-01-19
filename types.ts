@@ -37,6 +37,7 @@ export interface Translation {
   pickFolder: string;
   languageName: string;
   languageSelect: string;
+  themeToggle: string;
   offlineReady: string;
   adPlaceholder: string;
   confirmDownload: string;
