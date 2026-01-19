@@ -50,4 +50,7 @@ export interface Translation {
   searchPlaceholder: string;
   exportSearch: string;
   noResults: string;
+  exportCompleted: string;
+  completedCount: string;
+  totalImages: string;
 }

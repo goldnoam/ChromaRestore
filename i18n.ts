@@ -1,4 +1,3 @@
-
 import { Translation, Language } from './types';
 
 export const translations: Record<Language, Translation> = {
@@ -41,7 +40,10 @@ export const translations: Record<Language, Translation> = {
     tryExample: 'Sample Data:',
     searchPlaceholder: 'Search by filename...',
     exportSearch: 'Export Filtered Results',
-    noResults: 'No images match your search'
+    noResults: 'No images match your search',
+    exportCompleted: 'Export Completed',
+    completedCount: '{count} Completed',
+    totalImages: '{count} Images'
   },
   he: {
     title: 'ChromaRestore Pro',
@@ -82,7 +84,10 @@ export const translations: Record<Language, Translation> = {
     tryExample: 'נתוני דוגמה:',
     searchPlaceholder: 'חפש לפי שם קובץ...',
     exportSearch: 'ייצא מסוננים',
-    noResults: 'לא נמצאו תמונות התואמות לחיפוש'
+    noResults: 'לא נמצאו תמונות התואמות לחיפוש',
+    exportCompleted: 'ייצא משוחזרים',
+    completedCount: '{count} הושלמו',
+    totalImages: '{count} תמונות'
   },
   zh: {
     title: 'ChromaRestore Pro',
@@ -123,7 +128,10 @@ export const translations: Record<Language, Translation> = {
     tryExample: '样本数据：',
     searchPlaceholder: '按文件名搜索...',
     exportSearch: '导出已筛选',
-    noResults: '没有符合搜索条件的图像'
+    noResults: '没有符合搜索条件的图像',
+    exportCompleted: '导出已完成项目',
+    completedCount: '{count} 已完成',
+    totalImages: '{count} 图像'
   },
   hi: {
     title: 'ChromaRestore Pro',
@@ -164,7 +172,10 @@ export const translations: Record<Language, Translation> = {
     tryExample: 'नमूना डेटा:',
     searchPlaceholder: 'फ़ाइल नाम से खोजें...',
     exportSearch: 'फ़िल्टर किया हुआ निर्यात करें',
-    noResults: 'आपकी खोज से कोई छवि मेल नहीं खाती'
+    noResults: 'आपकी खोज से कोई छवि मेल नहीं खाती',
+    exportCompleted: 'पूर्ण निर्यात करें',
+    completedCount: '{count} पूर्ण',
+    totalImages: '{count} चित्र'
   },
   de: {
     title: 'ChromaRestore Pro',
@@ -205,7 +216,10 @@ export const translations: Record<Language, Translation> = {
     tryExample: 'Beispieldaten:',
     searchPlaceholder: 'Nach Dateiname suchen...',
     exportSearch: 'Gefilterte exportieren',
-    noResults: 'Keine Bilder entsprechen Ihrer Suche'
+    noResults: 'Keine Bilder entsprechen Ihrer Suche',
+    exportCompleted: 'Abgeschlossene exportieren',
+    completedCount: '{count} Abgeschlossen',
+    totalImages: '{count} Bilder'
   },
   es: {
     title: 'ChromaRestore Pro',
@@ -246,7 +260,10 @@ export const translations: Record<Language, Translation> = {
     tryExample: 'Datos de Ejemplo:',
     searchPlaceholder: 'Buscar por nombre...',
     exportSearch: 'Exportar Filtrados',
-    noResults: 'No hay imágenes que coincidan'
+    noResults: 'No hay imágenes que coincidan',
+    exportCompleted: 'Exportar Completados',
+    completedCount: '{count} Completados',
+    totalImages: '{count} Imágenes'
   },
   fr: {
     title: 'ChromaRestore Pro',
@@ -287,6 +304,9 @@ export const translations: Record<Language, Translation> = {
     tryExample: 'Données d\'Exemple :',
     searchPlaceholder: 'Rechercher par nom...',
     exportSearch: 'Exporter Filtrés',
-    noResults: 'Aucune image ne correspond'
+    noResults: 'Aucune image ne correspond',
+    exportCompleted: 'Exporter Terminés',
+    completedCount: '{count} Terminés',
+    totalImages: '{count} Images'
   }
 };

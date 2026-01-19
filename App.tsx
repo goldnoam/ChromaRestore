@@ -46,6 +46,8 @@ const App: React.FC = () => {
     img.file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const completedImagesCount = images.filter(img => img.status === 'completed').length;
+
   useEffect(() => {
     if (selectedIndex !== null && images[selectedIndex]) {
       const id = images[selectedIndex].id;
@@ -115,7 +117,7 @@ const App: React.FC = () => {
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (selectedIndex === null) return;
     const delta = -e.deltaY;
-    const factor = 0.0005; // Finer grain zoom
+    const factor = 0.0005; 
     setZoomLevel(prev => Math.min(Math.max(prev + delta * factor * prev, 1), 8));
   }, [selectedIndex]);
 
@@ -186,6 +188,22 @@ const App: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const exportCompleted = () => {
+    const completed = images.filter(img => img.status === 'completed');
+    if (completed.length === 0) return;
+    const prefix = targetLabel || 'export';
+    completed.forEach((img, idx) => {
+      if (img.resultUrl) {
+        setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = img.resultUrl!;
+          link.download = `${prefix}_${img.file.name}`;
+          link.click();
+        }, idx * 150);
+      }
+    });
   };
 
   const exportFiltered = () => {
@@ -345,16 +363,44 @@ const App: React.FC = () => {
             </div>
 
             {images.length > 0 && (
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={searchQuery} 
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  className={`w-full pl-11 pr-4 py-4 border theme-border rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm theme-text-main theme-bg-card`} 
-                  title={t.search}
-                />
-                <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 theme-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <div className="space-y-4">
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={searchQuery} 
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t.searchPlaceholder}
+                    className={`w-full pl-11 pr-4 py-4 border theme-border rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm theme-text-main theme-bg-card`} 
+                    title={t.search}
+                  />
+                  <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 theme-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+
+                {/* Gallery Toolbar - New feature for batch exporting completed images */}
+                <div className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border theme-border theme-bg-card shadow-sm`}>
+                  <div className="flex items-center gap-6">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase tracking-widest theme-text-muted mb-0.5">{t.search}</span>
+                      <span className="text-xs font-bold theme-text-main">{t.totalImages.replace('{count}', filteredImages.length.toString())}</span>
+                    </div>
+                    <div className="w-px h-8 theme-border"></div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/70 mb-0.5">{t.completed}</span>
+                      <span className="text-xs font-bold theme-text-main">{t.completedCount.replace('{count}', completedImagesCount.toString())}</span>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={exportCompleted}
+                    disabled={completedImagesCount === 0}
+                    className="group px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-3 shadow-lg hover:shadow-indigo-500/25 active:scale-95"
+                  >
+                    <svg className="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    {t.exportCompleted}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -371,6 +417,20 @@ const App: React.FC = () => {
                 />
               ))}
             </div>
+            
+            {images.length > 0 && filteredImages.length === 0 && (
+              <div className="py-20 text-center animate-in fade-in slide-in-from-bottom-4">
+                <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 border theme-border">
+                  <svg className="w-10 h-10 theme-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold mb-2">{t.noResults}</h3>
+                <button onClick={() => setSearchQuery('')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors text-sm underline underline-offset-4">
+                  Clear search filters
+                </button>
+              </div>
+            )}
           </section>
         </div>
       </main>
@@ -382,7 +442,6 @@ const App: React.FC = () => {
           onClick={() => setSelectedIndex(null)}
           onWheel={handleWheel}
         >
-          {/* Header Bar - More distinct in normal mode, subtle in fullscreen */}
           <div className={`absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between border-b theme-border transition-all ${isFullScreen ? 'opacity-40 hover:opacity-100 bg-slate-900/30' : 'backdrop-blur-xl theme-bg-card'}`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 truncate">
                <span className={`text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>{images[selectedIndex].file.name}</span>
@@ -417,7 +476,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Main Viewport */}
           <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
             <div 
               className="relative transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing" 
@@ -444,7 +502,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Controls Island - Floating centered bar */}
           <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-5 transition-all duration-500 ${isFullScreen ? 'bottom-12 scale-110' : ''}`} onClick={e => e.stopPropagation()}>
             <div className={`flex items-center gap-6 px-8 py-5 rounded-[2.5rem] border shadow-3xl transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/80 border-white/10 backdrop-blur-xl' : 'bg-white/90 border-slate-200 backdrop-blur-xl'}`}>
               <button 

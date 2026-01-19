@@ -71,7 +71,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
           <button 
             onClick={(e) => { e.stopPropagation(); onSelect(item); }} 
             className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-indigo-500/20 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}
-            title={t.fullScreen}
+            data-tooltip={t.fullScreen}
             aria-label={t.fullScreen}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
@@ -79,7 +79,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
           <button 
             onClick={(e) => { e.stopPropagation(); onShare(item); }} 
             className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-indigo-500/20 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}
-            title={t.share}
+            data-tooltip={t.share}
             aria-label={t.share}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
@@ -87,7 +87,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
           <button 
             onClick={(e) => { e.stopPropagation(); onRemove(item.id); }} 
             className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-rose-500/20 text-rose-500' : 'hover:bg-rose-50 text-rose-600'}`}
-            title={t.remove}
+            data-tooltip={t.remove}
             aria-label={t.remove}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
