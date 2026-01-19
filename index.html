@@ -29,13 +29,16 @@
   }
   </script>
 </head>
-<body class="bg-gray-900 text-gray-100">
+<body class="bg-slate-950 text-slate-100">
   <div id="root"></div>
   <script type="module" src="index.tsx"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.debug('SW registration failed', err));
+        // Use a root-relative path and specify type: 'module' to ensure correct loading in Vite/Vercel environments
+        navigator.serviceWorker.register('/sw.js', { type: 'module' })
+          .then(reg => console.debug('SW registered:', reg.scope))
+          .catch(err => console.debug('SW registration failed:', err));
       });
     }
   </script>

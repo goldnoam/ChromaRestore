@@ -300,49 +300,100 @@ const App: React.FC = () => {
 
       {selectedIndex !== null && images[selectedIndex] && (
         <div ref={modalRef} className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-3xl animate-in fade-in duration-500 overflow-hidden" onClick={() => setSelectedIndex(null)}>
-          <div className="h-16 px-6 flex items-center justify-between bg-slate-900/50 border-b border-white/5" onClick={e => e.stopPropagation()}>
-            <span className="text-white text-xs font-black truncate max-w-[120px]">{images[selectedIndex].file.name}</span>
+          {/* Header Bar - Floating and Translucent */}
+          <div className="absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between bg-slate-900/40 backdrop-blur-md border-b border-white/5 transition-opacity hover:opacity-100 opacity-90" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 truncate">
+               <span className="text-white text-[10px] font-black uppercase tracking-wider truncate bg-slate-950/60 px-3 py-1.5 rounded-lg border border-white/10">{images[selectedIndex].file.name}</span>
+               {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse">FULLSCREEN MODE</span>}
+            </div>
             <div className="flex items-center gap-3">
               {images[selectedIndex].resultUrl && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); setShowOriginalInModal(!showOriginalInModal); }} 
-                  className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] transition-all ${showOriginalInModal ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-slate-800/80 text-slate-300 border-white/10 hover:bg-slate-700'}`}
                 >
                   {showOriginalInModal ? t.result : t.original}
                 </button>
               )}
               <button 
                 onClick={(e) => { e.stopPropagation(); exportSingle(images[selectedIndex!]); }} 
-                className="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] disabled:opacity-50"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.1em] disabled:opacity-50 transition-colors border border-indigo-400 shadow-lg"
                 disabled={!images[selectedIndex].resultUrl}
               >
                 {t.export}
               </button>
-              <button onClick={() => setSelectedIndex(null)} className="p-2.5 text-slate-400 hover:text-rose-400">
+              <div className="w-px h-6 bg-white/10 mx-1"></div>
+              <button onClick={() => setSelectedIndex(null)} className="p-2 text-slate-300 hover:text-rose-400 transition-colors">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
           </div>
-          <div className="flex-1 flex items-center justify-center p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
+
+          {/* Main Viewport */}
+          <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="relative transition-transform duration-200 ease-out" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
               <img 
                 src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
                 alt="Preview" 
-                className="max-w-full max-h-[70vh] object-contain rounded-[2rem] shadow-2xl" 
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] border border-white/5" 
               />
             </div>
           </div>
-          <div className="h-32 bg-slate-950/80 flex flex-col items-center justify-center px-10 border-t border-white/5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-6 w-full max-w-xl">
-              <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.2, 1))} className="p-3 bg-slate-900 rounded-2xl border border-slate-800 text-slate-500">
+
+          {/* Controls Island - Adapts for Fullscreen */}
+          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4 transition-all ${isFullScreen ? 'scale-110 drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]' : ''}`} onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-900/70 backdrop-blur-xl border border-white/10 rounded-[2rem] px-6 py-4 flex items-center gap-6 shadow-2xl min-w-[320px] max-w-[90vw]">
+              <button 
+                onClick={() => setZoomLevel(prev => Math.max(prev - 0.2, 1))} 
+                className="p-3 bg-slate-800/80 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 rounded-2xl border border-white/5 transition-all"
+                title={t.zoomOut}
+              >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" /></svg>
               </button>
-              <input type="range" min="1" max="5" step="0.05" value={zoomLevel} onChange={(e) => setZoomLevel(parseFloat(e.target.value))} className="flex-1 accent-indigo-500" />
-              <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.2, 5))} className="p-3 bg-slate-900 rounded-2xl border border-slate-800 text-slate-500">
+              
+              <div className="flex-1 flex flex-col items-center gap-1">
+                 <input 
+                   type="range" 
+                   min="1" 
+                   max="5" 
+                   step="0.05" 
+                   value={zoomLevel} 
+                   onChange={(e) => setZoomLevel(parseFloat(e.target.value))} 
+                   className="w-full accent-indigo-500 h-1.5 rounded-full cursor-pointer opacity-80 hover:opacity-100 transition-opacity" 
+                 />
+                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t.zoomLevel}: {Math.round(zoomLevel * 100)}%</span>
+              </div>
+
+              <button 
+                onClick={() => setZoomLevel(prev => Math.min(prev + 0.2, 5))} 
+                className="p-3 bg-slate-800/80 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 rounded-2xl border border-white/5 transition-all"
+                title={t.zoomIn}
+              >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
               </button>
+
+              <div className="w-px h-8 bg-white/10 hidden sm:block"></div>
+
+              <button 
+                onClick={toggleFullScreen}
+                className={`p-3 rounded-2xl border border-white/5 transition-all hidden sm:block ${isFullScreen ? 'bg-indigo-600/40 text-indigo-200 border-indigo-500/30' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'}`}
+                title={t.fullScreen}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {isFullScreen 
+                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  }
+                </svg>
+              </button>
             </div>
-            <button onClick={resetView} className="mt-4 text-[9px] font-black uppercase tracking-widest text-indigo-400">{t.resetView}</button>
+            
+            <button 
+              onClick={resetView} 
+              className="px-4 py-2 bg-slate-950/60 backdrop-blur-md border border-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors shadow-xl"
+            >
+              {t.resetView}
+            </button>
           </div>
         </div>
       )}
