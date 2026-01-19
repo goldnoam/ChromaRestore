@@ -19,6 +19,7 @@ export interface Translation {
   downloadAll: string;
   processing: string;
   completed: string;
+  pending: string;
   error: string;
   targetFolder: string;
   targetFolderPlaceholder: string;

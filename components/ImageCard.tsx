@@ -17,6 +17,8 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
     error: 'bg-rose-500'
   };
 
+  const statusLabel = t[item.status as keyof Translation] || item.status;
+
   return (
     <div className="relative group bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-800 transition-all duration-300 ease-out hover:scale-[1.02]">
       <div 
@@ -35,10 +37,10 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
           </div>
         )}
 
-        {/* Status Dot Badge */}
+        {/* Status Dot Badge (Top Corner) */}
         <div 
           className={`absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-slate-900 shadow-xl z-20 ${statusColors[item.status]}`} 
-          title={`${t.processing}: ${t[item.status as keyof Translation] || item.status}`} 
+          title={statusLabel} 
         />
 
         {item.status === 'error' && (
@@ -49,9 +51,16 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
       </div>
 
       <div className="p-3 flex items-center justify-between bg-slate-900">
-        <p className="text-[10px] font-bold text-slate-400 truncate max-w-[65%] tracking-tight">
-          {item.file.name}
-        </p>
+        <div className="flex items-center gap-2 truncate max-w-[65%]">
+          {/* Small Status Dot Badge next to filename */}
+          <div 
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColors[item.status]}`} 
+            title={statusLabel}
+          />
+          <p className="text-[10px] font-bold text-slate-400 truncate tracking-tight">
+            {item.file.name}
+          </p>
+        </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
             onClick={(e) => { e.stopPropagation(); onShare(item); }} 
