@@ -6,20 +6,30 @@ interface ImageCardProps {
   t: Translation;
   theme: 'dark' | 'light';
   onRemove: (id: string) => void;
-  onSelect: (item: ImageItem) => void;
+  onSelect: (item: ImageItem, immediateFs?: boolean) => void;
   onShare: (item: ImageItem) => void;
 }
 
 export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, onSelect, onShare }) => {
   const statusColors = {
     pending: theme === 'dark' ? 'bg-slate-600' : 'bg-slate-400',
-    processing: 'bg-amber-400 animate-pulse', // Yellow as requested
+    processing: 'bg-yellow-400 animate-pulse', // Explicit yellow
     completed: 'bg-emerald-500', // Green
     error: 'bg-red-500' // Red
   };
 
   const statusLabel = t[item.status as keyof Translation] || item.status;
-  const errorTooltip = item.error ? `${t.error}: ${item.error}` : t.error;
+  
+  // Construct descriptive tooltip
+  const getStatusDesc = () => {
+    if (item.status === 'error' && item.error) {
+      return `${t.errorDesc}: ${item.error}`;
+    }
+    const descKey = `${item.status}Desc` as keyof Translation;
+    return t[descKey] || statusLabel;
+  };
+
+  const statusDesc = getStatusDesc();
 
   return (
     <div className={`relative group rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl border transition-all duration-300 ease-out hover:scale-[1.02] theme-border theme-bg-card`}>
@@ -34,22 +44,26 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
         />
         
         {item.status === 'processing' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-amber-950/20 backdrop-blur-[2px]">
-            <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[2px]">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin"></div>
+              <span className="text-[9px] font-black uppercase tracking-widest text-yellow-500 bg-black/40 px-2 py-1 rounded">{t.processing}</span>
+            </div>
           </div>
         )}
 
-        {/* Status Dot Badge (Top Corner) */}
+        {/* Status Badge in Corner with Descriptive Tooltip */}
         <div 
-          className={`absolute top-3 right-3 w-3 h-3 rounded-full border-2 shadow-xl z-20 ${statusColors[item.status]} ${theme === 'dark' ? 'border-slate-900' : 'border-white'}`} 
-          title={item.status === 'error' ? errorTooltip : statusLabel} 
+          className={`absolute top-3 right-3 w-3.5 h-3.5 rounded-full border-2 shadow-xl z-20 transition-transform group-hover:scale-125 ${statusColors[item.status]} ${theme === 'dark' ? 'border-slate-900' : 'border-white'}`} 
+          data-tooltip={statusDesc}
+          aria-label={statusDesc}
         />
 
         {item.status === 'error' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-red-500/20 backdrop-blur-[1px] p-4 text-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-red-500/10 backdrop-blur-[1px] p-4 text-center">
             <span 
-              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg cursor-help ${theme === 'dark' ? 'bg-slate-950/80 text-red-400' : 'bg-white/90 text-red-600'}`}
-              title={errorTooltip}
+              className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg cursor-help ${theme === 'dark' ? 'bg-slate-950/90 text-red-400' : 'bg-white/95 text-red-600'}`}
+              data-tooltip={statusDesc}
             >
               {t.error}
             </span>
@@ -57,19 +71,20 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, 
         )}
       </div>
 
-      <div className={`p-3 flex items-center justify-between transition-colors theme-bg-card`}>
-        <div className="flex items-center gap-2 truncate max-w-[50%]">
+      <div className={`p-3 flex items-center justify-between transition-colors theme-bg-card border-t theme-border`}>
+        <div className="flex items-center gap-2 truncate flex-1 mr-2">
+          {/* Status Dot next to filename with Descriptive Tooltip */}
           <div 
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColors[item.status]}`} 
-            title={item.status === 'error' ? errorTooltip : statusLabel}
+            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusColors[item.status]}`} 
+            data-tooltip={statusDesc}
           />
-          <p className={`text-[10px] font-bold truncate tracking-tight theme-text-muted`}>
+          <p className={`text-[10px] font-bold truncate tracking-tight theme-text-main`}>
             {item.file.name}
           </p>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
-            onClick={(e) => { e.stopPropagation(); onSelect(item); }} 
+            onClick={(e) => { e.stopPropagation(); onSelect(item, true); }} 
             className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-indigo-500/20 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}
             data-tooltip={t.fullScreen}
             aria-label={t.fullScreen}

@@ -1,6 +1,5 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Language, ImageItem, RestoreParams, GradingPreset, Translation } from './types';
+import { Language, ImageItem, RestoreParams, GradingPreset, EngineType, Translation } from './types';
 import { translations } from './i18n';
 import { processImageLocally, fileToBase64 } from './services/geminiService';
 import { ImageCard } from './components/ImageCard';
@@ -8,25 +7,38 @@ import { AdPlaceholder } from './components/AdPlaceholder';
 
 const INITIAL_SUGGESTIONS = ['Personal Photos', 'Family Heritage', 'Travel 2024', 'Work Projects', 'Client Deliverables'];
 
-interface ViewState {
-  zoom: number;
-  pan: { x: number; y: number };
-}
-
 const DEFAULT_PARAMS: RestoreParams = {
   temp: 15,
   saturation: 1.25,
   contrast: 1.15,
   intensity: 1.0,
-  grading: 'none'
+  grading: 'none',
+  engine: 'local'
 };
 
 const LUCKY_PROFILES: RestoreParams[] = [
-  { temp: 35, saturation: 1.45, contrast: 1.25, intensity: 1.0, grading: 'cinematic' },
-  { temp: -15, saturation: 1.3, contrast: 1.1, intensity: 0.9, grading: 'vintage' },
-  { temp: 10, saturation: 1.8, contrast: 1.4, intensity: 1.0, grading: 'vibrant' },
-  { temp: 20, saturation: 1.1, contrast: 1.0, intensity: 0.7, grading: 'sepia' },
+  { temp: 35, saturation: 1.45, contrast: 1.25, intensity: 1.0, grading: 'cinematic', engine: 'opencv' },
+  { temp: -15, saturation: 1.3, contrast: 1.1, intensity: 0.9, grading: 'vintage', engine: 'local' },
+  { temp: 10, saturation: 1.8, contrast: 1.4, intensity: 1.0, grading: 'vibrant', engine: 'paddlehub' },
+  { temp: 20, saturation: 1.1, contrast: 1.0, intensity: 0.7, grading: 'sepia', engine: 'local' },
+  { temp: 5, saturation: 1.5, contrast: 1.3, intensity: 1.0, grading: 'artistic', engine: 'opencv' },
 ];
+
+const PRESET_ICONS: Record<GradingPreset, string> = {
+  none: '⚪',
+  cinematic: '🎬',
+  vintage: '📷',
+  vibrant: '🌈',
+  sepia: '🎞️',
+  artistic: '🎨',
+  stable: '⚖️'
+};
+
+const ENGINE_ICONS: Record<EngineType, string> = {
+  local: '⚡',
+  opencv: '🤖',
+  paddlehub: '🧬'
+};
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
@@ -34,17 +46,15 @@ const App: React.FC = () => {
     return (localStorage.getItem('chroma-theme') as 'dark' | 'light') || 'dark';
   });
   const [images, setImages] = useState<ImageItem[]>([]);
-  const [targetLabel, setTargetLabel] = useState('');
-  const [usedLabels, setUsedLabels] = useState<string[]>(INITIAL_SUGGESTIONS);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [showOriginalInModal, setShowOriginalInModal] = useState(false);
-  const [viewStates, setViewStates] = useState<Record<string, ViewState>>({});
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const [lastSaved, setLastSaved] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const [tuningParams, setTuningParams] = useState<RestoreParams>(DEFAULT_PARAMS);
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -54,7 +64,8 @@ const App: React.FC = () => {
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
+  const modalViewportRef = useRef<HTMLDivElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDraggingImage = useRef(false);
@@ -63,6 +74,25 @@ const App: React.FC = () => {
   
   const t = translations[lang];
   const isRtl = lang === 'he';
+
+  // Fullscreen management
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      modalContainerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
 
   // SEO & Meta Initialization
   useEffect(() => {
@@ -126,16 +156,22 @@ const App: React.FC = () => {
     }
   };
 
-  // Handle zooming with mouse wheel
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (selectedIndex === null) return;
-    e.preventDefault();
-    const scaleFactor = 1.1;
-    const direction = e.deltaY < 0 ? 1 : -1;
-    setZoomLevel(prev => {
-      const next = direction > 0 ? prev * scaleFactor : prev / scaleFactor;
-      return Math.min(Math.max(next, 0.5), 10);
-    });
+  useEffect(() => {
+    const el = modalViewportRef.current;
+    if (!el || selectedIndex === null) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const scaleFactor = 1.1;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      setZoomLevel(prev => {
+        const next = direction > 0 ? prev * scaleFactor : prev / scaleFactor;
+        return Math.min(Math.max(next, 0.5), 10);
+      });
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
   }, [selectedIndex]);
 
   const processSingle = useCallback(async (item: ImageItem, params: RestoreParams = DEFAULT_PARAMS) => {
@@ -272,7 +308,7 @@ const App: React.FC = () => {
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  const onSelectImage = (item: ImageItem) => {
+  const onSelectImage = (item: ImageItem, immediateFs: boolean = false) => {
     const index = images.indexOf(item);
     setSelectedIndex(index);
     setShowOriginalInModal(false);
@@ -281,6 +317,10 @@ const App: React.FC = () => {
     setPanOffset({ x: 0, y: 0 });
     const saved = localStorage.getItem(getStorageKey(item));
     setTuningParams(saved ? JSON.parse(saved) : DEFAULT_PARAMS);
+    
+    if (immediateFs) {
+      setTimeout(toggleFullscreen, 100);
+    }
   };
 
   return (
@@ -365,11 +405,13 @@ const App: React.FC = () => {
               className={`group relative overflow-hidden border-2 border-dashed rounded-[3rem] p-14 text-center cursor-pointer transition-all duration-500 ${isDragging ? 'drag-pulsing shimmer-effect' : `theme-border hover:border-indigo-500/50 ${theme === 'dark' ? 'bg-slate-900/50 hover:bg-slate-900' : 'bg-white hover:bg-slate-50'}`}`}
             >
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} />
-              <div className="w-16 h-16 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
-                <span className="text-3xl group-hover:scale-110 transition-transform">📤</span>
+              <div className={`transition-all duration-500 ${isDragging ? 'drag-content-pulsing' : ''}`}>
+                <div className="w-16 h-16 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
+                  <span className="text-3xl group-hover:scale-110 transition-transform">📤</span>
+                </div>
+                <h3 className="text-2xl font-black mb-1 theme-text-main">{t.dropzoneTitle}</h3>
+                <p className="theme-text-muted text-[10px] font-black uppercase tracking-[0.2em]">{t.dropzoneSub}</p>
               </div>
-              <h3 className="text-2xl font-black mb-1 theme-text-main">{t.dropzoneTitle}</h3>
-              <p className="theme-text-muted text-[10px] font-black uppercase tracking-[0.2em]">{t.dropzoneSub}</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -377,7 +419,7 @@ const App: React.FC = () => {
                 <ImageCard 
                   key={img.id} item={img} t={t} theme={theme} 
                   onRemove={(id) => setImages(prev => prev.filter(i => i.id !== id))} 
-                  onSelect={onSelectImage} 
+                  onSelect={(item) => onSelectImage(item, false)} 
                   onShare={handleShare} 
                 />
               ))}
@@ -424,20 +466,26 @@ const App: React.FC = () => {
 
       {selectedIndex !== null && images[selectedIndex] && (
         <div 
+          ref={modalContainerRef}
           className={`fixed inset-0 z-50 flex flex-col md:flex-row backdrop-blur-3xl animate-in fade-in duration-300 overflow-hidden ${theme === 'dark' ? 'bg-slate-950/98' : 'bg-slate-50/95'}`} 
           onClick={() => setSelectedIndex(null)}
-          onWheel={handleWheel}
         >
           <div className="flex-1 relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
              <div className="h-16 px-6 flex items-center justify-between border-b theme-border backdrop-blur-xl theme-bg-card z-10">
                 <span className="text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border">{images[selectedIndex].file.name}</span>
                 <div className="flex items-center gap-2">
+                  <button onClick={toggleFullscreen} className={`p-2 rounded-xl transition-all border theme-border ${isFullscreen ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main'}`} data-tooltip={t.fullScreen}>
+                    {isFullscreen ? '⤦' : '⤢'}
+                  </button>
                   <button onMouseDown={() => setShowOriginalInModal(true)} onMouseUp={() => setShowOriginalInModal(false)} onTouchStart={() => setShowOriginalInModal(true)} onTouchEnd={() => setShowOriginalInModal(false)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${showOriginalInModal ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main theme-border'}`} data-tooltip={t.beforeAfter}>{t.beforeAfter}</button>
                   <button onClick={() => setSelectedIndex(null)} className="p-2 theme-text-main hover:text-rose-400" data-tooltip={t.close}>✖</button>
                 </div>
              </div>
              
-             <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
+             <div 
+                ref={modalViewportRef}
+                className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden"
+             >
                 <div 
                   className="relative transition-transform duration-100 ease-out flex flex-col items-center" 
                   style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }} 
@@ -471,15 +519,35 @@ const App: React.FC = () => {
                 {lastSaved && <span className="text-[9px] font-bold text-emerald-500 animate-pulse">✓ {t.settingsSaved}</span>}
              </div>
 
+             {/* Engine Selection */}
+             <div className="space-y-4">
+               <h5 className="text-[9px] font-black uppercase tracking-widest theme-text-muted">{t.engineType}</h5>
+               <div className="grid grid-cols-1 gap-2">
+                 {(['local', 'opencv', 'paddlehub'] as EngineType[]).map(et => (
+                   <button 
+                     key={et} 
+                     onClick={() => setTuningParams(p => ({...p, engine: et}))}
+                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${tuningParams.engine === et ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' : 'theme-border theme-text-muted hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                     data-tooltip={t[`${et}Desc` as keyof Translation]}
+                   >
+                     <span className="text-base">{ENGINE_ICONS[et]}</span>
+                     {t[`${et}Engine` as keyof Translation]}
+                   </button>
+                 ))}
+               </div>
+             </div>
+
              <div className="space-y-4">
                <h5 className="text-[9px] font-black uppercase tracking-widest theme-text-muted">{t.colorGrading}</h5>
-               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                 {(['none', 'cinematic', 'vintage', 'vibrant', 'sepia'] as GradingPreset[]).map(gp => (
+               <div className="flex flex-col gap-2">
+                 {(['none', 'cinematic', 'vintage', 'vibrant', 'sepia', 'artistic', 'stable'] as GradingPreset[]).map(gp => (
                    <button 
                      key={gp} 
                      onClick={() => setTuningParams(p => ({...p, grading: gp}))}
-                     className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black border transition-all ${tuningParams.grading === gp ? 'bg-indigo-600 text-white border-indigo-400' : 'theme-border theme-text-muted'}`}
+                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${tuningParams.grading === gp ? 'bg-indigo-600 text-white border-indigo-400 shadow-lg' : 'theme-border theme-text-muted hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                     data-tooltip={t[`${gp}Desc` as keyof Translation]}
                    >
+                     <span className="text-base">{PRESET_ICONS[gp]}</span>
                      {t[gp as keyof Translation]}
                    </button>
                  ))}
@@ -495,7 +563,7 @@ const App: React.FC = () => {
                 ].map((s) => (
                   <div key={s.key} className="space-y-2">
                     <div className="flex justify-between items-center"><label className="text-[10px] font-bold">{s.label}</label><span className="text-[10px] font-mono text-indigo-400">{s.val}</span></div>
-                    <input type="range" min={s.min} max={s.max} step={s.step} value={s.val} onChange={e => setTuningParams(p => ({...p, [s.key]: parseFloat(e.target.value)}))} className="w-full accent-indigo-500" />
+                    <input type="range" min={s.min} max={s.max} step={s.step} value={s.val} onChange={e => setTuningParams(p => ({...p, [s.key as keyof RestoreParams]: parseFloat(e.target.value)}))} className="w-full accent-indigo-500" />
                   </div>
                 ))}
              </div>
@@ -519,7 +587,7 @@ const App: React.FC = () => {
               <span className="opacity-20">|</span>
               <p className="text-[10px] font-black uppercase tracking-[0.3em]">(C) Noam Gold AI 2026</p>
            </div>
-           <p className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-400/80">ChromaRestore Pro Core v7.0 (High Precision)</p>
+           <p className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-400/80">ChromaRestore Pro Core v10.0 (Hybrid Neural Engine)</p>
         </div>
       </footer>
     </div>

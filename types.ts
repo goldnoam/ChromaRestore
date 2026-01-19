@@ -1,7 +1,9 @@
 
 export type Language = 'en' | 'he' | 'zh' | 'hi' | 'de' | 'es' | 'fr';
 
-export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia';
+export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia' | 'artistic' | 'stable';
+
+export type EngineType = 'local' | 'opencv' | 'paddlehub';
 
 export interface ImageItem {
   id: string;
@@ -19,6 +21,7 @@ export interface RestoreParams {
   contrast: number;
   intensity: number;
   grading: GradingPreset;
+  engine: EngineType;
 }
 
 export interface Translation {
@@ -83,9 +86,30 @@ export interface Translation {
   vintage: string;
   vibrant: string;
   sepia: string;
+  artistic: string;
+  stable: string;
   none: string;
   sendFeedback: string;
   openCamera: string;
   capture: string;
   cameraPermissionDenied: string;
+  pendingDesc: string;
+  processingDesc: string;
+  completedDesc: string;
+  errorDesc: string;
+  artisticDesc: string;
+  stableDesc: string;
+  cinematicDesc: string;
+  vintageDesc: string;
+  vibrantDesc: string;
+  sepiaDesc: string;
+  noneDesc: string;
+  // New Engine translations
+  engineType: string;
+  localEngine: string;
+  opencvEngine: string;
+  paddlehubEngine: string;
+  localDesc: string;
+  opencvDesc: string;
+  paddlehubDesc: string;
 }
