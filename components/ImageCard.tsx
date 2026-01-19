@@ -1,0 +1,76 @@
+import React from 'react';
+import { ImageItem, Translation } from '../types';
+
+interface ImageCardProps {
+  item: ImageItem;
+  t: Translation;
+  onRemove: (id: string) => void;
+  onSelect: (item: ImageItem) => void;
+  onShare: (item: ImageItem) => void;
+}
+
+export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelect, onShare }) => {
+  const statusColors = {
+    pending: 'bg-slate-600',
+    processing: 'bg-indigo-400 animate-pulse',
+    completed: 'bg-emerald-500',
+    error: 'bg-rose-500'
+  };
+
+  return (
+    <div className="relative group bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-800 transition-all duration-300 ease-out hover:scale-[1.02]">
+      <div 
+        className="aspect-square relative overflow-hidden bg-slate-950 cursor-pointer"
+        onClick={() => onSelect(item)}
+      >
+        <img 
+          src={item.previewUrl} 
+          alt={item.file.name} 
+          className={`w-full h-full object-cover transition-all duration-700 ${item.status === 'processing' ? 'scale-110 blur-md opacity-40' : 'scale-100 blur-0'}`}
+        />
+        
+        {item.status === 'processing' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-indigo-950/20 backdrop-blur-[2px]">
+            <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+          </div>
+        )}
+
+        {/* Status Dot Badge */}
+        <div 
+          className={`absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-slate-900 shadow-xl z-20 ${statusColors[item.status]}`} 
+          title={`${t.processing}: ${t[item.status as keyof Translation] || item.status}`} 
+        />
+
+        {item.status === 'error' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-rose-500/20 backdrop-blur-[1px] p-4 text-center">
+            <span className="text-rose-400 text-[10px] font-black uppercase tracking-widest bg-slate-950/80 px-2 py-1 rounded-md shadow-lg">{t.error}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="p-3 flex items-center justify-between bg-slate-900">
+        <p className="text-[10px] font-bold text-slate-400 truncate max-w-[65%] tracking-tight">
+          {item.file.name}
+        </p>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onShare(item); }} 
+            className="p-1.5 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-all"
+            title={t.share}
+            aria-label={t.share}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onRemove(item.id); }} 
+            className="p-1.5 hover:bg-rose-500/20 text-rose-500 rounded-lg transition-all"
+            title={t.remove}
+            aria-label={t.remove}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
