@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'he' | 'zh' | 'hi' | 'de' | 'es' | 'fr';
 
 export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia';
@@ -84,4 +85,7 @@ export interface Translation {
   sepia: string;
   none: string;
   sendFeedback: string;
+  openCamera: string;
+  capture: string;
+  cameraPermissionDenied: string;
 }

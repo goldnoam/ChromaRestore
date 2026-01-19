@@ -1,3 +1,4 @@
+
 import { Translation, Language } from './types';
 
 export const translations: Record<Language, Translation> = {
@@ -19,7 +20,7 @@ export const translations: Record<Language, Translation> = {
     languageName: 'English',
     languageSelect: 'Select Language',
     themeToggle: 'Switch Appearance',
-    offlineReady: 'Gemini Professional Engine Active',
+    offlineReady: 'Professional Restoration Engine Active',
     adPlaceholder: 'Support Our Development',
     confirmDownload: 'Confirm export for all processed items?',
     dropNow: 'Release to add!',
@@ -64,7 +65,10 @@ export const translations: Record<Language, Translation> = {
     vibrant: 'Vibrant',
     sepia: 'Sepia',
     none: 'Normal',
-    sendFeedback: 'Send Feedback'
+    sendFeedback: 'Send Feedback',
+    openCamera: 'Use Camera',
+    capture: 'Capture Photo',
+    cameraPermissionDenied: 'Camera access was denied.'
   },
   he: {
     title: 'ChromaRestore Pro',
@@ -84,7 +88,7 @@ export const translations: Record<Language, Translation> = {
     languageName: 'עברית',
     languageSelect: 'בחר שפה',
     themeToggle: 'החלף מראה',
-    offlineReady: 'מנוע Gemini מקצועי פעיל',
+    offlineReady: 'מנוע שחזור מקצועי פעיל',
     adPlaceholder: 'תמכו בפיתוח שלנו',
     confirmDownload: 'אשר ייצוא לכל הפריטים שעובדו?',
     dropNow: 'שחרר להוספה!',
@@ -129,7 +133,10 @@ export const translations: Record<Language, Translation> = {
     vibrant: 'תוסס',
     sepia: 'ספיה',
     none: 'רגיל',
-    sendFeedback: 'שלח משוב'
+    sendFeedback: 'שלח משוב',
+    openCamera: 'השתמש במצלמה',
+    capture: 'צלם תמונה',
+    cameraPermissionDenied: 'הגישה למצלמה נדחתה.'
   },
   zh: {
     title: 'ChromaRestore Pro',
@@ -149,7 +156,7 @@ export const translations: Record<Language, Translation> = {
     languageName: '中文',
     languageSelect: '选择语言',
     themeToggle: '切换外观',
-    offlineReady: 'Gemini 专业引擎已激活',
+    offlineReady: '专业还原引擎已激活',
     adPlaceholder: '支持我们的开发',
     confirmDownload: '确认导出所有处理过的项目吗？',
     dropNow: '松开即可添加！',
@@ -194,7 +201,10 @@ export const translations: Record<Language, Translation> = {
     vibrant: '鲜艳',
     sepia: '棕褐色',
     none: '标准',
-    sendFeedback: '发送反馈'
+    sendFeedback: '发送反馈',
+    openCamera: '使用摄像头',
+    capture: '拍摄照片',
+    cameraPermissionDenied: '摄像头访问被拒绝。'
   },
   hi: {
     title: 'ChromaRestore Pro',
@@ -214,7 +224,7 @@ export const translations: Record<Language, Translation> = {
     languageName: 'हिन्दी',
     languageSelect: 'भाषा चुनें',
     themeToggle: 'प्रकटन स्विच करें',
-    offlineReady: 'Gemini प्रोफेशनल इंजन सक्रिय',
+    offlineReady: 'प्रोफेशनल रिस्टोरेशन इंजन सक्रिय',
     adPlaceholder: 'हमारे विकास का समर्थन करें',
     confirmDownload: 'क्या आप सभी प्रोसेस्ड आइटम निर्यात करना चाहते हैं?',
     dropNow: 'जोड़ने के लिए छोड़ें!',
@@ -259,7 +269,10 @@ export const translations: Record<Language, Translation> = {
     vibrant: 'वाइब्रेंट',
     sepia: 'सेपिया',
     none: 'सामान्य',
-    sendFeedback: 'फीडबैक भेजें'
+    sendFeedback: 'फीडबैक भेजें',
+    openCamera: 'कैमरा उपयोग करें',
+    capture: 'फ़ोटो कैप्चर करें',
+    cameraPermissionDenied: 'कैमरा एक्सेस अस्वीकार कर दिया गया था।'
   },
   de: {
     title: 'ChromaRestore Pro',
@@ -279,7 +292,7 @@ export const translations: Record<Language, Translation> = {
     languageName: 'Deutsch',
     languageSelect: 'Sprache wählen',
     themeToggle: 'Erscheinungsbild ändern',
-    offlineReady: 'Gemini Professional Engine aktiv',
+    offlineReady: 'Professionelle Restaurierung aktiv',
     adPlaceholder: 'Unterstützen Sie uns',
     confirmDownload: 'Export für alle verarbeiteten Elemente bestätigen?',
     dropNow: 'Loslassen zum Hinzufügen!',
@@ -294,7 +307,7 @@ export const translations: Record<Language, Translation> = {
     resetView: 'Ansicht zurücksetzen (0)',
     zoomLevel: 'Zoomstufe',
     zoomIn: 'Vergrößern (+)',
-    zoomOut: 'Verkleinern (-)',
+    zoomOut: 'Verkleinerun (-)',
     remove: 'Bild entfernen',
     search: 'Galerie durchsuchen',
     imageCount: 'Bild {current} von {total}',
@@ -324,7 +337,10 @@ export const translations: Record<Language, Translation> = {
     vibrant: 'Lebhaft',
     sepia: 'Sepia',
     none: 'Normal',
-    sendFeedback: 'Feedback senden'
+    sendFeedback: 'Feedback senden',
+    openCamera: 'Kamera benutzen',
+    capture: 'Foto aufnehmen',
+    cameraPermissionDenied: 'Der Kamerazugriff wurde verweigert.'
   },
   es: {
     title: 'ChromaRestore Pro',
@@ -344,7 +360,7 @@ export const translations: Record<Language, Translation> = {
     languageName: 'Español',
     languageSelect: 'Seleccionar idioma',
     themeToggle: 'Cambiar apariencia',
-    offlineReady: 'Motor Gemini Profesional Activo',
+    offlineReady: 'Motor de Restauración Profesional Activo',
     adPlaceholder: 'Apoya nuestro desarrollo',
     confirmDownload: '¿Confirmar exportación de todos los elementos?',
     dropNow: '¡Suelta para añadir!',
@@ -389,7 +405,10 @@ export const translations: Record<Language, Translation> = {
     vibrant: 'Vibrante',
     sepia: 'Sepia',
     none: 'Normal',
-    sendFeedback: 'Enviar comentarios'
+    sendFeedback: 'Enviar comentarios',
+    openCamera: 'Usar Cámara',
+    capture: 'Capturar Foto',
+    cameraPermissionDenied: 'El acceso a la cámara fue denegado.'
   },
   fr: {
     title: 'ChromaRestore Pro',
@@ -409,7 +428,7 @@ export const translations: Record<Language, Translation> = {
     languageName: 'Français',
     languageSelect: 'Choisir la langue',
     themeToggle: 'Changer d\'apparence',
-    offlineReady: 'Moteur Professionnel Gemini Actif',
+    offlineReady: 'Moteur de Restauration Professionnel Actif',
     adPlaceholder: 'Soutenez-nous',
     confirmDownload: 'Confirmer l\'exportation de tous les éléments ?',
     dropNow: 'Relâchez pour ajouter !',
@@ -454,6 +473,9 @@ export const translations: Record<Language, Translation> = {
     vibrant: 'Vibrant',
     sepia: 'Sépia',
     none: 'Normal',
-    sendFeedback: 'Envoyer avis'
+    sendFeedback: 'Envoyer avis',
+    openCamera: 'Utiliser la caméra',
+    capture: 'Prendre une photo',
+    cameraPermissionDenied: 'L\'accès à la caméra a été refusé.'
   }
 };
