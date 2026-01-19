@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ImageItem, Translation } from '../types';
 
@@ -18,6 +19,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
   };
 
   const statusLabel = t[item.status as keyof Translation] || item.status;
+  const errorTooltip = item.error ? `${t.error}: ${item.error}` : t.error;
 
   return (
     <div className="relative group bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-800 transition-all duration-300 ease-out hover:scale-[1.02]">
@@ -40,12 +42,17 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
         {/* Status Dot Badge (Top Corner) */}
         <div 
           className={`absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-slate-900 shadow-xl z-20 ${statusColors[item.status]}`} 
-          title={statusLabel} 
+          title={item.status === 'error' ? errorTooltip : statusLabel} 
         />
 
         {item.status === 'error' && (
           <div className="absolute inset-0 flex items-center justify-center bg-rose-500/20 backdrop-blur-[1px] p-4 text-center">
-            <span className="text-rose-400 text-[10px] font-black uppercase tracking-widest bg-slate-950/80 px-2 py-1 rounded-md shadow-lg">{t.error}</span>
+            <span 
+              className="text-rose-400 text-[10px] font-black uppercase tracking-widest bg-slate-950/80 px-2 py-1 rounded-md shadow-lg cursor-help"
+              title={errorTooltip}
+            >
+              {t.error}
+            </span>
           </div>
         )}
       </div>
@@ -55,7 +62,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
           {/* Small Status Dot Badge next to filename */}
           <div 
             className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColors[item.status]}`} 
-            title={statusLabel}
+            title={item.status === 'error' ? errorTooltip : statusLabel}
           />
           <p className="text-[10px] font-bold text-slate-400 truncate tracking-tight">
             {item.file.name}

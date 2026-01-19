@@ -1,3 +1,4 @@
+
 import { Translation, Language } from './types';
 
 export const translations: Record<Language, Translation> = {

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Language, ImageItem } from './types';
 import { translations } from './i18n';
@@ -36,7 +37,7 @@ const App: React.FC = () => {
 
     setIsProcessing(true);
     setImages(prev => prev.map(img => 
-      img.id === nextItem.id ? { ...img, status: 'processing' } : img
+      img.id === nextItem.id ? { ...img, status: 'processing', error: undefined } : img
     ));
 
     try {
@@ -49,9 +50,10 @@ const App: React.FC = () => {
       if (targetLabel.trim() && !usedLabels.includes(targetLabel.trim())) {
         setUsedLabels(prev => [targetLabel.trim(), ...prev].slice(0, 15));
       }
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage = err?.message || String(err);
       setImages(prev => prev.map(img => 
-        img.id === nextItem.id ? { ...img, status: 'error', error: String(err) } : img
+        img.id === nextItem.id ? { ...img, status: 'error', error: errorMessage } : img
       ));
     } finally {
       setIsProcessing(false);
@@ -84,6 +86,12 @@ const App: React.FC = () => {
     setZoomLevel(1);
     setPanOffset({ x: 0, y: 0 });
   }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (selectedIndex === null) return;
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoomLevel(prev => Math.min(Math.max(prev + delta, 1), 5));
+  }, [selectedIndex]);
 
   const toggleFullScreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -238,6 +246,7 @@ const App: React.FC = () => {
                   onClick={exportFiltered} 
                   disabled={filteredImages.length === 0} 
                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  title={t.downloadAll}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                   {t.downloadAll}
@@ -245,6 +254,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => setImages([])} 
                   className="w-full py-3 text-slate-500 hover:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] transition-colors"
+                  title={t.clearBtn}
                 >
                   {t.clearBtn}
                 </button>
@@ -260,6 +270,7 @@ const App: React.FC = () => {
               onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
               onClick={() => fileInputRef.current?.click()}
               className={`group border-2 border-dashed rounded-[3rem] p-14 text-center cursor-pointer transition-all duration-500 ${isDragging ? 'drag-pulsing' : 'border-slate-800 hover:border-indigo-500/50 bg-slate-900/50 hover:bg-slate-900'}`}
+              title={t.dropzoneTitle}
             >
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} />
               <div className={`w-16 h-16 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 transition-all group-hover:scale-110 ${isDragging ? 'scale-125 drag-content-pulsing' : ''}`}>
@@ -277,6 +288,7 @@ const App: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t.searchPlaceholder}
                   className="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-white" 
+                  title={t.search}
                 />
                 <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
@@ -289,7 +301,7 @@ const App: React.FC = () => {
                   item={img} 
                   t={t} 
                   onRemove={(id) => setImages(prev => prev.filter(i => i.id !== id))} 
-                  onSelect={() => { setSelectedIndex(images.indexOf(img)); setShowOriginalInModal(false); }} 
+                  onSelect={() => { setSelectedIndex(images.indexOf(img)); setShowOriginalInModal(false); resetView(); }} 
                   onShare={handleShare} 
                 />
               ))}
@@ -299,18 +311,25 @@ const App: React.FC = () => {
       </main>
 
       {selectedIndex !== null && images[selectedIndex] && (
-        <div ref={modalRef} className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-3xl animate-in fade-in duration-500 overflow-hidden" onClick={() => setSelectedIndex(null)}>
+        <div 
+          ref={modalRef} 
+          className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-3xl animate-in fade-in duration-500 overflow-hidden" 
+          onClick={() => setSelectedIndex(null)}
+          onWheel={handleWheel}
+        >
           {/* Header Bar - Floating and Translucent */}
           <div className="absolute top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between bg-slate-900/40 backdrop-blur-md border-b border-white/5 transition-opacity hover:opacity-100 opacity-90" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 truncate">
                <span className="text-white text-[10px] font-black uppercase tracking-wider truncate bg-slate-950/60 px-3 py-1.5 rounded-lg border border-white/10">{images[selectedIndex].file.name}</span>
                {isFullScreen && <span className="text-[10px] font-bold text-indigo-400 animate-pulse">FULLSCREEN MODE</span>}
+               {images[selectedIndex].status === 'error' && <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20" title={images[selectedIndex].error}>{t.error}</span>}
             </div>
             <div className="flex items-center gap-3">
               {images[selectedIndex].resultUrl && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); setShowOriginalInModal(!showOriginalInModal); }} 
                   className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-slate-800/80 text-slate-300 border-white/10 hover:bg-slate-700'}`}
+                  title={showOriginalInModal ? t.result : t.original}
                 >
                   {showOriginalInModal ? t.result : t.original}
                 </button>
@@ -319,11 +338,16 @@ const App: React.FC = () => {
                 onClick={(e) => { e.stopPropagation(); exportSingle(images[selectedIndex!]); }} 
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.1em] disabled:opacity-50 transition-colors border border-indigo-400 shadow-lg"
                 disabled={!images[selectedIndex].resultUrl}
+                title={t.export}
               >
                 {t.export}
               </button>
               <div className="w-px h-6 bg-white/10 mx-1"></div>
-              <button onClick={() => setSelectedIndex(null)} className="p-2 text-slate-300 hover:text-rose-400 transition-colors">
+              <button 
+                onClick={() => setSelectedIndex(null)} 
+                className="p-2 text-slate-300 hover:text-rose-400 transition-colors"
+                title={t.close}
+              >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -331,12 +355,23 @@ const App: React.FC = () => {
 
           {/* Main Viewport */}
           <div className="flex-1 flex items-center justify-center p-4 md:p-12 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="relative transition-transform duration-200 ease-out" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
+            <div className="relative transition-transform duration-200 ease-out cursor-zoom-in" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
               <img 
                 src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
                 alt="Preview" 
                 className="max-w-full max-h-[85vh] object-contain rounded-2xl md:rounded-[2rem] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.6)] border border-white/5" 
               />
+              {images[selectedIndex].status === 'error' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-950/40 backdrop-blur-sm rounded-2xl md:rounded-[2rem] p-6 text-center">
+                   <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mb-4 border border-rose-500/40">
+                      <svg className="w-8 h-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                   </div>
+                   <h4 className="text-xl font-black text-rose-400 mb-2 uppercase tracking-widest">{t.error}</h4>
+                   <p className="text-slate-200 text-sm max-w-md bg-slate-900/80 p-4 rounded-xl border border-white/5 shadow-2xl font-mono break-words">
+                     {images[selectedIndex].error || "An unknown error occurred during colorization."}
+                   </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -360,6 +395,7 @@ const App: React.FC = () => {
                    value={zoomLevel} 
                    onChange={(e) => setZoomLevel(parseFloat(e.target.value))} 
                    className="w-full accent-indigo-500 h-1.5 rounded-full cursor-pointer opacity-80 hover:opacity-100 transition-opacity" 
+                   title={t.zoomLevel}
                  />
                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{t.zoomLevel}: {Math.round(zoomLevel * 100)}%</span>
               </div>
@@ -391,6 +427,7 @@ const App: React.FC = () => {
             <button 
               onClick={resetView} 
               className="px-4 py-2 bg-slate-950/60 backdrop-blur-md border border-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors shadow-xl"
+              title={t.resetView}
             >
               {t.resetView}
             </button>
