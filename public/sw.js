@@ -1,9 +1,8 @@
-const CACHE_NAME = 'chroma-restore-v4';
+const CACHE_NAME = 'chroma-restore-v5';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/index.css',
-  '/manifest.json'
+  './',
+  'index.css',
+  'manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -11,7 +10,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return Promise.allSettled(
         ASSETS.map(url => 
-          cache.add(url).catch(err => console.debug(`Failed to cache ${url}:`, err))
+          cache.add(url).catch(err => console.debug(`Pre-caching skip for ${url}:`, err))
         )
       );
     })
@@ -38,7 +37,7 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cached) => {
       const networked = fetch(event.request)
         .then((response) => {
-          if (response.status === 200) {
+          if (response && response.status === 200) {
             const cacheCopy = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, cacheCopy);
@@ -48,7 +47,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html') || caches.match('/');
+            return caches.match('./') || caches.match('/index.html');
           }
           return null;
         });

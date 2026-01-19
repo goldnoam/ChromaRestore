@@ -1,0 +1,157 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css');
+
+:root { 
+  --primary: #6366f1; 
+  --transition-speed: 0.3s;
+}
+
+/* Base Theme Variables */
+.dark {
+  --bg-app: #020617;
+  --bg-header: rgba(15, 23, 42, 0.9);
+  --bg-card: #0f172a;
+  --bg-input: #020617;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border-main: #1e293b;
+  --shadow-main: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --bg-tooltip: #1e293b;
+  --text-tooltip: #f1f5f9;
+}
+
+.light {
+  --bg-app: #f8fafc;
+  --bg-header: rgba(255, 255, 255, 0.9);
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border-main: #e2e8f0;
+  --shadow-main: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --bg-tooltip: #ffffff;
+  --text-tooltip: #0f172a;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: background-color var(--transition-speed), color var(--transition-speed);
+  overflow-x: hidden;
+}
+
+/* Tooltip System */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  padding: 6px 10px;
+  background: var(--bg-tooltip);
+  color: var(--text-tooltip);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+  border: 1px solid rgba(128, 128, 128, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  letter-spacing: 0.05em;
+}
+
+[data-tooltip]::after {
+  content: '';
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  border: 5px solid transparent;
+  border-top-color: var(--bg-tooltip);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* RTL Support */
+[dir="rtl"] { font-family: 'Heebo', sans-serif; }
+.lang-zh { font-family: 'Noto Sans SC', sans-serif; }
+.lang-hi { font-family: 'Noto Sans Devanagari', sans-serif; }
+
+/* Theme Utility Overrides */
+.theme-bg-app { background-color: var(--bg-app); }
+.theme-bg-card { background-color: var(--bg-card); }
+.theme-text-main { color: var(--text-main); }
+.theme-text-muted { color: var(--text-muted); }
+.theme-border { border-color: var(--border-main); }
+
+/* Animations */
+@keyframes pulse-border {
+  0%, 100% { 
+    border-color: rgba(99, 102, 241, 0.3); 
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); 
+  }
+  50% { 
+    border-color: rgba(99, 102, 241, 0.8); 
+    box-shadow: 0 0 15px 0 rgba(99, 102, 241, 0.15); 
+  }
+}
+
+@keyframes pulse-content {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.015); opacity: 0.9; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.drag-pulsing {
+  animation: pulse-border 2s infinite ease-in-out;
+  background-color: rgba(99, 102, 241, 0.06) !important;
+  border-style: solid !important;
+}
+
+.drag-content-pulsing { 
+  animation: pulse-content 2s infinite ease-in-out; 
+}
+
+.shimmer-effect::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 200%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: shimmer 2.5s infinite linear;
+  pointer-events: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-app); }
+::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.backdrop-blur-xl { backdrop-filter: blur(24px); }
+.backdrop-blur-3xl { backdrop-filter: blur(64px); }
+
+/* Theme Transition Helper */
+* {
+  transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
