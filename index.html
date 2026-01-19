@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaRestore Pro - Professional Image restoration</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236366f1'/%3E%3Ccircle cx='50' cy='50' r='20' fill='white'/%3E%3C/svg%3E">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#020617">
 
   <!-- Production-ready Styles -->
@@ -35,12 +35,11 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Use relative path with ./ to ensure correct lookup in Vercel subdirectories
-        if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-          navigator.serviceWorker.register('./sw.js', { scope: './' })
-            .then(reg => console.debug('SW registered:', reg.scope))
-            .catch(err => console.debug('SW registration failed:', err));
-        }
+        // Using /sw.js to ensure it registers at the root level as per standard PWA practices
+        // This resolves the 404 error when the app is served from the root domain
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.debug('ServiceWorker registration successful:', reg.scope))
+          .catch(err => console.debug('ServiceWorker registration failed:', err));
       });
     }
   </script>
