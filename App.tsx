@@ -19,6 +19,13 @@ const DEFAULT_PARAMS: RestoreParams = {
   intensity: 1.0
 };
 
+const LUCKY_PROFILES: RestoreParams[] = [
+  { temp: 35, saturation: 1.45, contrast: 1.25, intensity: 1.0 }, // Cinematic Warm
+  { temp: -15, saturation: 1.3, contrast: 1.1, intensity: 0.9 }, // Cool Modern
+  { temp: 10, saturation: 1.8, contrast: 1.4, intensity: 1.0 },  // High Vibrant
+  { temp: 20, saturation: 1.1, contrast: 1.0, intensity: 0.7 },  // Natural Muted
+];
+
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -100,7 +107,7 @@ const App: React.FC = () => {
       const item = images[selectedIndex!];
       await processSingle(item, tuningParams);
       setIsReprocessing(false);
-    }, 50); // Small debounce for smoother UI
+    }, 60); // Balanced debounce
 
     return () => {
       if (processTimerRef.current) window.clearTimeout(processTimerRef.current);
@@ -141,12 +148,8 @@ const App: React.FC = () => {
   };
 
   const handleFeelingLucky = () => {
-    setTuningParams({
-      temp: 25 + Math.floor(Math.random() * 20),
-      saturation: 1.4 + (Math.random() * 0.4),
-      contrast: 1.2 + (Math.random() * 0.2),
-      intensity: 1.0
-    });
+    const randomProfile = LUCKY_PROFILES[Math.floor(Math.random() * LUCKY_PROFILES.length)];
+    setTuningParams(randomProfile);
   };
 
   const handleResetTuning = () => setTuningParams(DEFAULT_PARAMS);
@@ -299,7 +302,6 @@ const App: React.FC = () => {
     } else {
       resetView();
     }
-    // Reset tuning params for new selection
     setTuningParams(DEFAULT_PARAMS);
   };
 
@@ -468,20 +470,6 @@ const App: React.FC = () => {
                 />
               ))}
             </div>
-            
-            {images.length > 0 && filteredImages.length === 0 && (
-              <div className="py-20 text-center animate-in fade-in slide-in-from-bottom-4">
-                <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 border theme-border">
-                  <svg className="w-10 h-10 theme-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold mb-2">{t.noResults}</h3>
-                <button onClick={() => setSearchQuery('')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors text-sm underline underline-offset-4">
-                  Clear search filters
-                </button>
-              </div>
-            )}
           </section>
         </div>
       </main>
@@ -492,7 +480,6 @@ const App: React.FC = () => {
           className={`fixed inset-0 z-50 flex flex-col md:flex-row backdrop-blur-3xl animate-in fade-in duration-300 overflow-hidden ${theme === 'dark' ? 'bg-slate-950/98' : 'bg-slate-50/95'}`} 
           onClick={() => setSelectedIndex(null)}
         >
-          {/* Main Viewer Area */}
           <div className="flex-1 relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
              <div className={`h-16 px-6 flex items-center justify-between border-b theme-border transition-all ${isFullScreen ? 'opacity-40 hover:opacity-100 bg-slate-900/30' : 'backdrop-blur-xl theme-bg-card'}`}>
                 <div className="flex items-center gap-3 truncate">
@@ -502,9 +489,6 @@ const App: React.FC = () => {
                   <button 
                     onMouseDown={() => setShowOriginalInModal(true)}
                     onMouseUp={() => setShowOriginalInModal(false)}
-                    onMouseLeave={() => setShowOriginalInModal(false)}
-                    onTouchStart={() => setShowOriginalInModal(true)}
-                    onTouchEnd={() => setShowOriginalInModal(false)}
                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] transition-all border ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-400' : 'theme-bg-app theme-text-main theme-border hover:bg-indigo-500/10'}`}
                     title={t.beforeAfter}
                   >
@@ -513,7 +497,6 @@ const App: React.FC = () => {
                   <button 
                     onClick={() => setSelectedIndex(null)} 
                     className="p-2 theme-text-main hover:text-rose-400 transition-colors"
-                    title={t.close}
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
@@ -522,38 +505,36 @@ const App: React.FC = () => {
 
              <div className="flex-1 flex items-center justify-center p-4 md:p-8" onWheel={handleWheel}>
                 <div 
-                  className="relative transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing" 
+                  className="relative transition-transform duration-100 ease-out" 
                   style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}
                   onMouseDown={handleMouseDown}
                 >
                   <img 
                     src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} 
                     alt="Restored Preview" 
-                    draggable={false}
-                    className={`max-w-full max-h-[75vh] object-contain rounded-2xl md:rounded-[2rem] border theme-border select-none ${theme === 'dark' ? 'shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]' : 'shadow-2xl'}`} 
+                    className={`max-w-full max-h-[75vh] object-contain rounded-2xl md:rounded-[2rem] border theme-border select-none shadow-2xl transition-opacity duration-300 ${isReprocessing ? 'opacity-70' : 'opacity-100'}`} 
                   />
                   {isReprocessing && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-2xl md:rounded-[2rem]">
-                      <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-8 h-8 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
                     </div>
                   )}
+                  {/* Local Analysis Scanline Effect */}
+                  {isReprocessing && <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500/30 animate-[shimmer_2s_infinite] shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>}
                 </div>
              </div>
 
              <div className="h-24 px-8 flex items-center justify-center gap-8">
                 <div className={`flex items-center gap-4 px-6 py-3 rounded-full border shadow-xl ${theme === 'dark' ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-slate-200'}`}>
-                  <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} className="p-2 theme-text-muted hover:text-indigo-400 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg></button>
+                  <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 1))} className="p-2 theme-text-muted hover:text-indigo-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg></button>
                   <span className="text-[10px] font-black w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
-                  <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} className="p-2 theme-text-muted hover:text-indigo-400 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button>
-                  <div className="w-px h-6 theme-border"></div>
-                  <button onClick={toggleFullScreen} className="p-2 theme-text-muted hover:text-indigo-400 transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg></button>
+                  <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 8))} className="p-2 theme-text-muted hover:text-indigo-400"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></button>
                 </div>
              </div>
           </div>
 
-          {/* Right Tuning Sidebar */}
           <div 
-            className={`w-full md:w-80 h-auto md:h-full border-t md:border-t-0 md:border-l theme-border p-6 flex flex-col gap-8 animate-in slide-in-from-right duration-500 overflow-y-auto ${theme === 'dark' ? 'bg-slate-900/50 backdrop-blur-3xl' : 'bg-white/80 backdrop-blur-3xl'}`}
+            className={`w-full md:w-80 h-auto md:h-full border-t md:border-t-0 md:border-l theme-border p-6 flex flex-col gap-8 overflow-y-auto ${theme === 'dark' ? 'bg-slate-900/50 backdrop-blur-3xl' : 'bg-white/80 backdrop-blur-3xl'}`}
             onClick={e => e.stopPropagation()}
           >
              <div>
@@ -597,7 +578,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <label className="text-[11px] font-bold theme-text-main">{t.intensity}</label>
+                      <label className="text-[11px] font-bold theme-text-main">{t.intensity} (Depth)</label>
                       <span className="text-[10px] font-mono text-indigo-400">{Math.round(tuningParams.intensity * 100)}%</span>
                     </div>
                     <input 
@@ -612,10 +593,9 @@ const App: React.FC = () => {
 
              <div className="mt-auto space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                   <button 
+                  <button 
                     onClick={handleResetTuning}
                     className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 transition-all text-[9px] font-black uppercase tracking-widest"
-                    title={t.resetTuning}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     {t.resetTuning.split(' ')[0]}
@@ -623,9 +603,8 @@ const App: React.FC = () => {
                   <button 
                     onClick={handleShowOriginal}
                     className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border theme-border theme-text-muted hover:theme-text-main hover:bg-slate-800/40 transition-all text-[9px] font-black uppercase tracking-widest"
-                    title={t.showOriginal}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
                     {t.original}
                   </button>
                 </div>
@@ -650,7 +629,7 @@ const App: React.FC = () => {
       )}
 
       <footer className="py-16 text-center opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by ChromaRestore Adaptive Engine v2.0</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] mb-3">Powered by ChromaRestore Semantic Engine v4.0</p>
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">© 2026 Privacy-First Restoration Systems</p>
       </footer>
     </div>

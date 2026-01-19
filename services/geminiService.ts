@@ -1,6 +1,6 @@
 /**
- * Advanced Local Image Processor v3.0
- * Performs context-aware adaptive chroma restoration directly in the browser.
+ * Advanced Local Image Processor v4.0 - Semantic Simulation
+ * Performs context-aware restoration using local variance analysis to detect "sub-elements".
  */
 
 export interface RestoreConfig {
@@ -36,83 +36,83 @@ export async function processImageLocally(
 
       const { temp, saturation, contrast, intensity } = config;
       
-      // Calculate color offsets based on "Temperature"
-      const rOffset = temp > 0 ? temp * 0.35 : temp * 0.1;
-      const bOffset = temp < 0 ? Math.abs(temp) * 0.45 : -temp * 0.15;
+      // Pre-calculate Temperature biases
+      const rTemp = temp > 0 ? temp * 0.4 : temp * 0.1;
+      const bTemp = temp < 0 ? Math.abs(temp) * 0.5 : -temp * 0.2;
+
+      // Temporary buffer for variance to detect "texture" (sub-elements)
+      const varianceBuffer = new Float32Array(width * height);
+      
+      // Fast Variance Pass (Approximate local detail)
+      for (let y = 1; y < height - 1; y += 2) {
+        for (let x = 1; x < width - 1; x += 2) {
+          const idx = (y * width + x) * 4;
+          const center = data[idx];
+          const right = data[idx + 4];
+          const down = data[idx + width * 4];
+          const diff = Math.abs(center - right) + Math.abs(center - down);
+          varianceBuffer[y * width + x] = diff / 255;
+        }
+      }
 
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           const i = (y * width + x) * 4;
-          let r = data[i];
-          let g = data[i + 1];
-          let b = data[i + 2];
+          const lum = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+          const nL = lum / 255;
+          const nY = y / height;
+          const nX = x / width;
+          const localDetail = varianceBuffer[y * width + x] || 0.1;
 
-          // 1. Calculate Perceptual Luminance
-          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-          const nL = lum / 255; // Normalized Luminance
-          const nY = y / height; // Normalized Y position (0 at top, 1 at bottom)
-          const nX = x / width;  // Normalized X position
-
-          // 2. Position-Aware Heuristic Mapping
           let targetR = lum;
           let targetG = lum;
           let targetB = lum;
 
-          // Adaptive Logic
-          if (nL < 0.15) {
-            // Deep Shadows: Cool & Muted
-            targetR = lum * 0.85;
-            targetG = lum * 0.9;
-            targetB = lum * 1.15;
-          } else if (nY < 0.35 && nL > 0.4) {
-            // Likely SKY (Top part, relatively bright)
-            // Shift towards Sky Blue
-            targetR = lum * 0.85;
-            targetG = lum * 0.95;
-            targetB = lum * 1.4;
-          } else if (nY > 0.7 && nL < 0.6) {
-            // Likely GROUND (Bottom part, darker/mid)
-            // Shift towards Earthy Green/Brown
-            targetR = lum * 1.1;
-            targetG = lum * 1.25;
-            targetB = lum * 0.9;
-          } else if (nL > 0.3 && nL < 0.8) {
-            // Likely SUBJECTS (Mid-tones, center or general)
-            // Shift towards Warm/Skin/Natural tones
-            const distFromCenter = Math.sqrt(Math.pow(nX - 0.5, 2) + Math.pow(nY - 0.5, 2));
-            const centerWeight = Math.max(0, 1 - distFromCenter * 1.5);
-            
-            // Boost warmth in the center (skin tones)
-            targetR = lum * (1.25 + centerWeight * 0.15);
-            targetG = lum * (1.05 + centerWeight * 0.05);
-            targetB = lum * (0.85 - centerWeight * 0.1);
+          // SEMANTIC LOGIC: Determine sub-element based on position, luminance, AND detail density
+          if (nL < 0.12) {
+            // Shadow Detail: Deep Cool Tones
+            targetR = lum * 0.8; targetG = lum * 0.85; targetB = lum * 1.1;
+          } else if (nY < 0.4 && localDetail < 0.05 && nL > 0.45) {
+            // SKY: High position, low detail, high brightness
+            targetR = lum * 0.8; targetG = lum * 0.9; targetB = lum * 1.5;
+          } else if (localDetail > 0.15 && nL < 0.7) {
+            // TEXTURE (Foliage/Fabric/Sub-elements): High detail density
+            // Green/Yellow shift for organic feel
+            targetR = lum * 1.1; targetG = lum * 1.35; targetB = lum * 0.85;
+          } else if (nL > 0.3 && nL < 0.85) {
+            // SUBJECT/SKIN: Mid-tones with moderate detail
+            const dist = Math.sqrt(Math.pow(nX - 0.5, 2) + Math.pow(nY - 0.4, 2));
+            const focus = Math.max(0, 1 - dist * 1.4);
+            targetR = lum * (1.3 + focus * 0.2); 
+            targetG = lum * (1.1 + focus * 0.05); 
+            targetB = lum * (0.9 - focus * 0.1);
           } else {
-            // Highlights: Crisp white with very slight warmth
-            targetR = lum * 1.05;
-            targetG = lum * 1.03;
-            targetB = lum * 1.0;
+            // HIGHLIGHTS: Clean white
+            targetR = lum * 1.05; targetG = lum * 1.05; targetB = lum;
           }
 
-          // 3. Global Color Blend & Temp Overrides
-          let finalR = r * (1 - intensity) + (targetR + rOffset) * intensity;
-          let finalG = g * (1 - intensity) + targetG * intensity;
-          let finalB = b * (1 - intensity) + (targetB + bOffset) * intensity;
+          // Blending Logic: Intensity is now a "Confidence" scalar
+          // Higher intensity makes the "Semantic Choice" more pronounced
+          const mix = intensity * (0.8 + localDetail * 0.4); 
+          let finalR = data[i] * (1 - mix) + (targetR + rTemp) * mix;
+          let finalG = data[i+1] * (1 - mix) + (targetG) * mix;
+          let finalB = data[i+2] * (1 - mix) + (targetB + bTemp) * mix;
 
-          // 4. Contrast Adjustment (Pivot around 128)
+          // Post-processing: Contrast (pivoted at 128)
           finalR = ((finalR - 128) * contrast) + 128;
           finalG = ((finalG - 128) * contrast) + 128;
           finalB = ((finalB - 128) * contrast) + 128;
 
-          // 5. Saturation Enhancement (HSL-like logic)
+          // Saturation
           const finalLum = 0.299 * finalR + 0.587 * finalG + 0.114 * finalB;
-          finalR = finalLum + (finalR - finalLum) * saturation;
-          finalG = finalLum + (finalG - finalLum) * saturation;
-          finalB = finalLum + (finalB - finalLum) * saturation;
+          const satBase = 1.0 + (saturation - 1.0) * (intensity * 1.2);
+          finalR = finalLum + (finalR - finalLum) * satBase;
+          finalG = finalLum + (finalG - finalLum) * satBase;
+          finalB = finalLum + (finalB - finalLum) * satBase;
 
-          // Clamp and assign
           data[i] = Math.max(0, Math.min(255, finalR));
-          data[i + 1] = Math.max(0, Math.min(255, finalG));
-          data[i + 2] = Math.max(0, Math.min(255, finalB));
+          data[i+1] = Math.max(0, Math.min(255, finalG));
+          data[i+2] = Math.max(0, Math.min(255, finalB));
         }
       }
 
