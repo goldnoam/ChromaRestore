@@ -164,7 +164,7 @@ const App: React.FC = () => {
       <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 shadow-2xl">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">🎨</span>
+            <span className="text-2xl drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]" title={t.title}>🎨</span>
             <h1 className="text-lg font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-indigo-200">{t.title}</h1>
           </div>
           
@@ -193,14 +193,14 @@ const App: React.FC = () => {
           <h2 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight text-white">{t.subtitle}</h2>
           <div className="flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <p className="text-slate-400 max-w-xl text-sm md:text-base font-medium">{t.offlineReady}</p>
+            <p className="text-slate-400 max-w-xl text-sm md:text-base font-medium" title={t.offlineReady}>{t.offlineReady}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <aside className="lg:col-span-1 space-y-6">
             <div className="bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl border border-slate-800">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">{t.targetFolder}</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1" title={t.targetFolder}>{t.targetFolder}</label>
               <div className="relative">
                 <input 
                   type="text" 
@@ -215,13 +215,13 @@ const App: React.FC = () => {
                   }}
                   placeholder={t.targetFolderPlaceholder} 
                   className="w-full pl-4 pr-10 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm font-medium text-white placeholder:text-slate-700" 
-                  title={t.targetFolder}
+                  title={t.targetFolderPlaceholder}
                 />
                 <datalist id="labels-list">
                   {usedLabels.map(s => <option key={s} value={s} />)}
                 </datalist>
                 {targetLabel && (
-                  <button onClick={() => setTargetLabel('')} title={t.close} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-rose-500 transition-colors">
+                  <button onClick={() => setTargetLabel('')} title={t.clearBtn} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-rose-500 transition-colors">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" /></svg>
                   </button>
                 )}
@@ -231,6 +231,7 @@ const App: React.FC = () => {
                   onClick={exportFiltered} 
                   disabled={filteredImages.length === 0} 
                   title={t.downloadAll}
+                  aria-label={t.downloadAll}
                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 text-sm"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -239,6 +240,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => setImages([])} 
                   title={t.clearBtn}
+                  aria-label={t.clearBtn}
                   className="w-full py-3 text-slate-500 hover:text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] transition-colors"
                 >
                   {t.clearBtn}
@@ -256,6 +258,7 @@ const App: React.FC = () => {
               onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files); }}
               onClick={() => fileInputRef.current?.click()}
               className={`group border-2 border-dashed rounded-[3rem] p-14 text-center cursor-pointer transition-all duration-500 ${isDragging ? 'drag-pulsing' : 'border-slate-800 hover:border-indigo-500/50 bg-slate-900/50 hover:bg-slate-900'}`}
+              title={t.dropzoneTitle}
               aria-label={t.dropzoneTitle}
             >
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} />
@@ -277,6 +280,7 @@ const App: React.FC = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t.searchPlaceholder}
                     title={t.search}
+                    aria-label={t.search}
                     className="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-white placeholder:text-slate-700 shadow-inner" 
                   />
                   <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -285,6 +289,7 @@ const App: React.FC = () => {
                   <button 
                     onClick={exportFiltered} 
                     title={t.exportSearch}
+                    aria-label={t.exportSearch}
                     className="px-6 py-4 bg-indigo-500/10 text-indigo-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500/20 transition-all"
                   >
                     {t.exportSearch}
