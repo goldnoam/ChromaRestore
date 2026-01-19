@@ -1,44 +1,55 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChromaRestore Pro - Professional Image restoration</title>
+  <title>ChromaRestore Pro - AI Color Restoration</title>
+  <meta name="description" content="Professional B&W to Color image restoration. 100% local processing, no cloud, no API keys required. Restore family heritage and historic photos instantly.">
+  <meta name="keywords" content="image colorization, black and white to color, photo restoration, ai image processing, local ai, chromarestore">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236366f1'/%3E%3Ccircle cx='50' cy='50' r='20' fill='white'/%3E%3C/svg%3E">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#020617">
 
-  <!-- Production-ready Styles -->
-  <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="./index.css">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- AdSense with graceful fail -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0274741291001288" crossorigin="anonymous" onerror="console.debug('Ad provider blocked')"></script>
-
   <script type="importmap">
-  {
-    "imports": {
-      "react/": "https://esm.sh/react@^19.2.3/",
-      "react": "https://esm.sh/react@^19.2.3",
-      "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-      "react-dom": "https://esm.sh/react-dom@^19.2.3"
-    }
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
-  </script>
+}
+</script>
 </head>
-<body class="bg-slate-950 text-slate-100">
+<body class="bg-slate-950 text-slate-100 antialiased">
   <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+  <script type="module" src="./index.tsx"></script>
+  
+  <!-- AdSense with enhanced error isolation -->
   <script>
+    (function() {
+      const adScript = document.createElement('script');
+      adScript.async = true;
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0274741291001288";
+      adScript.crossOrigin = "anonymous";
+      adScript.onerror = function() {
+        console.warn('AdSense blocked or unavailable. Proceeding with fallback UI.');
+      };
+      document.head.appendChild(adScript);
+    })();
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.debug('SW Active'))
-          .catch(err => console.debug('SW Failed'));
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
+          .then(reg => console.debug('ServiceWorker registered'))
+          .catch(err => console.debug('ServiceWorker registration failed:', err));
       });
     }
   </script>
