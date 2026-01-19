@@ -4,14 +4,15 @@ import { ImageItem, Translation } from '../types';
 interface ImageCardProps {
   item: ImageItem;
   t: Translation;
+  theme: 'dark' | 'light';
   onRemove: (id: string) => void;
   onSelect: (item: ImageItem) => void;
   onShare: (item: ImageItem) => void;
 }
 
-export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelect, onShare }) => {
+export const ImageCard: React.FC<ImageCardProps> = ({ item, t, theme, onRemove, onSelect, onShare }) => {
   const statusColors = {
-    pending: 'bg-slate-600',
+    pending: theme === 'dark' ? 'bg-slate-600' : 'bg-slate-400',
     processing: 'bg-indigo-400 animate-pulse',
     completed: 'bg-emerald-500',
     error: 'bg-rose-500'
@@ -21,9 +22,9 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
   const errorTooltip = item.error ? `${t.error}: ${item.error}` : t.error;
 
   return (
-    <div className="relative group bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 border border-slate-800 transition-all duration-300 ease-out hover:scale-[1.02]">
+    <div className={`relative group rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl border transition-all duration-300 ease-out hover:scale-[1.02] theme-border theme-bg-card`}>
       <div 
-        className="aspect-square relative overflow-hidden bg-slate-950 cursor-pointer"
+        className={`aspect-square relative overflow-hidden cursor-pointer ${theme === 'dark' ? 'bg-slate-950' : 'bg-slate-100'}`}
         onClick={() => onSelect(item)}
       >
         <img 
@@ -40,14 +41,14 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
 
         {/* Status Dot Badge (Top Corner) */}
         <div 
-          className={`absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-slate-900 shadow-xl z-20 ${statusColors[item.status]}`} 
+          className={`absolute top-3 right-3 w-3 h-3 rounded-full border-2 shadow-xl z-20 ${statusColors[item.status]} ${theme === 'dark' ? 'border-slate-900' : 'border-white'}`} 
           title={item.status === 'error' ? errorTooltip : statusLabel} 
         />
 
         {item.status === 'error' && (
           <div className="absolute inset-0 flex items-center justify-center bg-rose-500/20 backdrop-blur-[1px] p-4 text-center">
             <span 
-              className="text-rose-400 text-[10px] font-black uppercase tracking-widest bg-slate-950/80 px-2 py-1 rounded-md shadow-lg cursor-help"
+              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md shadow-lg cursor-help ${theme === 'dark' ? 'bg-slate-950/80 text-rose-400' : 'bg-white/90 text-rose-600'}`}
               title={errorTooltip}
             >
               {t.error}
@@ -56,21 +57,20 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
         )}
       </div>
 
-      <div className="p-3 flex items-center justify-between bg-slate-900">
+      <div className={`p-3 flex items-center justify-between transition-colors theme-bg-card`}>
         <div className="flex items-center gap-2 truncate max-w-[65%]">
-          {/* Small Status Dot Badge next to filename */}
           <div 
             className={`w-2 h-2 rounded-full flex-shrink-0 ${statusColors[item.status]}`} 
             title={item.status === 'error' ? errorTooltip : statusLabel}
           />
-          <p className="text-[10px] font-bold text-slate-400 truncate tracking-tight">
+          <p className={`text-[10px] font-bold truncate tracking-tight theme-text-muted`}>
             {item.file.name}
           </p>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
             onClick={(e) => { e.stopPropagation(); onShare(item); }} 
-            className="p-1.5 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-all"
+            className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-indigo-500/20 text-indigo-400' : 'hover:bg-indigo-50 text-indigo-600'}`}
             title={t.share}
             aria-label={t.share}
           >
@@ -78,7 +78,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({ item, t, onRemove, onSelec
           </button>
           <button 
             onClick={(e) => { e.stopPropagation(); onRemove(item.id); }} 
-            className="p-1.5 hover:bg-rose-500/20 text-rose-500 rounded-lg transition-all"
+            className={`p-1.5 rounded-lg transition-all ${theme === 'dark' ? 'hover:bg-rose-500/20 text-rose-500' : 'hover:bg-rose-50 text-rose-600'}`}
             title={t.remove}
             aria-label={t.remove}
           >
