@@ -1,3 +1,4 @@
+
 @import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css');
 
 :root { 
@@ -102,20 +103,27 @@ body {
 .theme-border { border-color: var(--border-main); }
 
 /* Animations */
-@keyframes pulse-border {
-  0%, 100% { 
-    border-color: rgba(99, 102, 241, 0.3); 
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); 
+@keyframes pulse-border-intense {
+  0% { 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2); 
+    border-width: 2px;
   }
   50% { 
-    border-color: rgba(99, 102, 241, 0.8); 
-    box-shadow: 0 0 15px 0 rgba(99, 102, 241, 0.15); 
+    border-color: #818cf8; 
+    box-shadow: 0 0 25px 5px rgba(99, 102, 241, 0.15); 
+    border-width: 3px;
+  }
+  100% { 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); 
+    border-width: 2px;
   }
 }
 
-@keyframes pulse-content {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.015); opacity: 0.9; }
+@keyframes pulse-text-shimmer {
+  0%, 100% { opacity: 1; transform: scale(1); filter: brightness(100%); }
+  50% { opacity: 0.7; transform: scale(1.02); filter: brightness(130%); }
 }
 
 @keyframes shimmer {
@@ -124,13 +132,13 @@ body {
 }
 
 .drag-pulsing {
-  animation: pulse-border 2s infinite ease-in-out;
-  background-color: rgba(99, 102, 241, 0.06) !important;
+  animation: pulse-border-intense 1.5s infinite ease-in-out;
+  background-color: rgba(99, 102, 241, 0.08) !important;
   border-style: solid !important;
 }
 
 .drag-content-pulsing { 
-  animation: pulse-content 2s infinite ease-in-out; 
+  animation: pulse-text-shimmer 1.5s infinite ease-in-out; 
 }
 
 .shimmer-effect::after {

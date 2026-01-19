@@ -1,11 +1,10 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Language, ImageItem, RestoreParams, GradingPreset, EngineType, Translation } from './types';
 import { translations } from './i18n';
-import { processImageLocally, fileToBase64 } from './services/geminiService';
+import { processImageLocally, fileToBase64 } from './services/restorationService';
 import { ImageCard } from './components/ImageCard';
 import { AdPlaceholder } from './components/AdPlaceholder';
-
-const INITIAL_SUGGESTIONS = ['Personal Photos', 'Family Heritage', 'Travel 2024', 'Work Projects', 'Client Deliverables'];
 
 const DEFAULT_PARAMS: RestoreParams = {
   temp: 15,
@@ -409,8 +408,8 @@ const App: React.FC = () => {
                 <div className="w-16 h-16 bg-indigo-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
                   <span className="text-3xl group-hover:scale-110 transition-transform">📤</span>
                 </div>
-                <h3 className="text-2xl font-black mb-1 theme-text-main">{t.dropzoneTitle}</h3>
-                <p className="theme-text-muted text-[10px] font-black uppercase tracking-[0.2em]">{t.dropzoneSub}</p>
+                <h3 className={`text-2xl font-black mb-1 theme-text-main transition-all ${isDragging ? 'scale-105' : ''}`}>{t.dropzoneTitle}</h3>
+                <p className={`theme-text-muted text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isDragging ? 'opacity-80' : ''}`}>{t.dropzoneSub}</p>
               </div>
             </div>
 
@@ -419,7 +418,7 @@ const App: React.FC = () => {
                 <ImageCard 
                   key={img.id} item={img} t={t} theme={theme} 
                   onRemove={(id) => setImages(prev => prev.filter(i => i.id !== id))} 
-                  onSelect={(item) => onSelectImage(item, false)} 
+                  onSelect={(item, immediateFs) => onSelectImage(item, immediateFs)} 
                   onShare={handleShare} 
                 />
               ))}
@@ -474,7 +473,7 @@ const App: React.FC = () => {
              <div className="h-16 px-6 flex items-center justify-between border-b theme-border backdrop-blur-xl theme-bg-card z-10">
                 <span className="text-[10px] font-black uppercase tracking-wider truncate px-3 py-1.5 rounded-lg border theme-border">{images[selectedIndex].file.name}</span>
                 <div className="flex items-center gap-2">
-                  <button onClick={toggleFullscreen} className={`p-2 rounded-xl transition-all border theme-border ${isFullscreen ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main'}`} data-tooltip={t.fullScreen}>
+                  <button onClick={toggleFullscreen} className={`p-2 rounded-xl transition-all border theme-border ${isFullscreen ? 'bg-indigo-600 text-white border-indigo-500' : 'theme-bg-app theme-text-main'}`} data-tooltip={t.fullScreen}>
                     {isFullscreen ? '⤦' : '⤢'}
                   </button>
                   <button onMouseDown={() => setShowOriginalInModal(true)} onMouseUp={() => setShowOriginalInModal(false)} onTouchStart={() => setShowOriginalInModal(true)} onTouchEnd={() => setShowOriginalInModal(false)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${showOriginalInModal ? 'bg-indigo-600 text-white' : 'theme-bg-app theme-text-main theme-border'}`} data-tooltip={t.beforeAfter}>{t.beforeAfter}</button>
@@ -587,7 +586,7 @@ const App: React.FC = () => {
               <span className="opacity-20">|</span>
               <p className="text-[10px] font-black uppercase tracking-[0.3em]">(C) Noam Gold AI 2026</p>
            </div>
-           <p className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-400/80">ChromaRestore Pro Core v10.0 (Hybrid Neural Engine)</p>
+           <p className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-400/80">ChromaRestore Pro Core v11.0 (Hybrid Local Engine)</p>
         </div>
       </footer>
     </div>
