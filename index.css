@@ -121,11 +121,6 @@ body {
   }
 }
 
-@keyframes pulse-text-shimmer {
-  0%, 100% { opacity: 1; transform: scale(1); filter: brightness(100%); }
-  50% { opacity: 0.7; transform: scale(1.02); filter: brightness(130%); }
-}
-
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
@@ -135,10 +130,6 @@ body {
   animation: pulse-border-intense 1.5s infinite ease-in-out;
   background-color: rgba(99, 102, 241, 0.08) !important;
   border-style: solid !important;
-}
-
-.drag-content-pulsing { 
-  animation: pulse-text-shimmer 1.5s infinite ease-in-out; 
 }
 
 .shimmer-effect::after {
@@ -159,7 +150,13 @@ body {
 .backdrop-blur-xl { backdrop-filter: blur(24px); }
 .backdrop-blur-3xl { backdrop-filter: blur(64px); }
 
-/* Theme Transition Helper */
+/* Custom Vertical Control List */
+.grading-list-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 * {
   transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Language, ImageItem, RestoreParams, GradingPreset, EngineType, Translation } from './types';
 import { translations } from './i18n';
@@ -136,7 +137,7 @@ const App: React.FC = () => {
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `captured_${Date.now()}.jpg`, { type: 'image/jpeg' });
-          setImages(prev => [{ id: Math.random().toString(36).substr(2, 9), file, previewUrl: URL.createObjectURL(file as any as Blob), status: 'pending' }, ...prev]);
+          setImages(prev => [{ id: Math.random().toString(36).substr(2, 9), file: file as any as File, previewUrl: URL.createObjectURL(file as any as Blob), status: 'pending' }, ...prev]);
           closeCamera();
         }
       }, 'image/jpeg');
@@ -292,12 +293,6 @@ const App: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
               {images.map(img => <ImageCard key={img.id} item={img} t={t} theme={theme} onRemove={id => setImages(p => p.filter(i => i.id !== id))} onSelect={onSelectImage} onShare={i => navigator.share?.({ title: t.shareTitle, url: window.location.href })} />)}
             </div>
-            
-            {images.length === 0 && (
-              <div className="py-20 text-center opacity-30">
-                <p className="text-sm italic">No images in your work queue...</p>
-              </div>
-            )}
           </section>
         </div>
       </main>
@@ -365,9 +360,14 @@ const App: React.FC = () => {
 
             <div className="space-y-4">
                <h5 className="text-[9px] font-black uppercase tracking-widest opacity-70">{t.colorGrading}</h5>
-               <div className="flex flex-col gap-2">
+               <div className="grading-list-vertical">
                  {(['none', 'cinematic', 'vintage', 'vibrant', 'sepia', 'artistic', 'stable'] as GradingPreset[]).map(gp => (
-                   <button key={gp} onClick={() => setTuningParams(p => ({...p, grading: gp}))} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${tuningParams.grading === gp ? 'bg-indigo-600 text-white border-indigo-400 shadow-lg' : 'theme-border opacity-60 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800'}`} data-tooltip={t[`${gp}Desc` as keyof Translation]}>
+                   <button 
+                     key={gp} 
+                     onClick={() => setTuningParams(p => ({...p, grading: gp}))} 
+                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${tuningParams.grading === gp ? 'bg-indigo-600 text-white border-indigo-400 shadow-lg' : 'theme-border opacity-60 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800'}`} 
+                     data-tooltip={t[`${gp}Desc` as keyof Translation]}
+                   >
                      <span className="text-base">{PRESET_ICONS[gp]}</span> {t[gp as keyof Translation]}
                    </button>
                  ))}
