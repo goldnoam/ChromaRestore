@@ -1,8 +1,7 @@
 
 export default {
-  plugins: {
-    // Removed 'tailwindcss' to prevent build failure when the module is not in the node_modules.
-    // We are using the CDN-based Tailwind import in index.css for reliability.
-    autoprefixer: {},
-  },
+  // Plugins are emptied to prevent build failures in environments where 
+  // 'tailwindcss' or 'autoprefixer' are not installed as local node modules.
+  // We utilize the Tailwind CDN for styling to ensure maximum compatibility.
+  plugins: {},
 }
