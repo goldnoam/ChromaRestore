@@ -446,19 +446,17 @@ const App: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, x: -20 }}
-                        className="group relative rounded-2xl overflow-hidden glass aspect-square spotlight"
+                        className="group relative rounded-2xl overflow-hidden glass aspect-square spotlight cursor-zoom-in"
+                        onClick={() => {
+                          setPreviewItem(item);
+                          setShowOriginalPreview(false);
+                        }}
+                        onDoubleClick={() => {
+                          setPreviewItem(item);
+                          setShowOriginalPreview(false);
+                        }}
                       >
-                        <div 
-                          className="relative w-full h-full flex items-stretch cursor-zoom-in"
-                          onClick={() => {
-                            setPreviewItem(item);
-                            setShowOriginalPreview(false);
-                          }}
-                          onDoubleClick={() => {
-                            setPreviewItem(item);
-                            setShowOriginalPreview(false);
-                          }}
-                        >
+                        <div className="relative w-full h-full flex items-stretch">
                           {item.status === 'completed' && item.resultUrl ? (
                             <>
                               <div className="flex-1 relative overflow-hidden border-r border-white/10">
@@ -512,7 +510,15 @@ const App: React.FC = () => {
                               )}>
                                 {t[item.status]}
                               </Badge>
-                              <Button size="icon" variant="destructive" className="w-7 h-7 rounded-full" onClick={() => removeImage(item.id)}>
+                              <Button 
+                                size="icon" 
+                                variant="destructive" 
+                                className="w-7 h-7 rounded-full" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(item.id);
+                                }}
+                              >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                             </div>
@@ -521,10 +527,26 @@ const App: React.FC = () => {
                               <div className="space-y-1">
                                 <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">{t.original}</p>
                                 <div className="flex gap-1">
-                                  <Button size="icon" variant="secondary" className="w-7 h-7 rounded-lg glass" onClick={() => downloadImage(item.previewUrl, `original_${item.file.name}`)}>
+                                  <Button 
+                                    size="icon" 
+                                    variant="secondary" 
+                                    className="w-7 h-7 rounded-lg glass" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      downloadImage(item.previewUrl, `original_${item.file.name}`);
+                                    }}
+                                  >
                                     <Download className="w-3.5 h-3.5" />
                                   </Button>
-                                  <Button size="icon" variant="secondary" className="w-7 h-7 rounded-lg glass" onClick={() => shareImage(item.previewUrl)}>
+                                  <Button 
+                                    size="icon" 
+                                    variant="secondary" 
+                                    className="w-7 h-7 rounded-lg glass" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      shareImage(item.previewUrl);
+                                    }}
+                                  >
                                     <ExternalLink className="w-3.5 h-3.5" />
                                   </Button>
                                 </div>
@@ -534,10 +556,26 @@ const App: React.FC = () => {
                                 <div className="space-y-1">
                                   <p className="text-[8px] font-bold text-primary uppercase tracking-wider">{t.result}</p>
                                   <div className="flex gap-1">
-                                    <Button size="icon" variant="default" className="w-7 h-7 rounded-lg shadow-lg shadow-primary/20" onClick={() => downloadImage(item.resultUrl!, `restored_${item.file.name}`)}>
+                                    <Button 
+                                      size="icon" 
+                                      variant="default" 
+                                      className="w-7 h-7 rounded-lg shadow-lg shadow-primary/20" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        downloadImage(item.resultUrl!, `restored_${item.file.name}`);
+                                      }}
+                                    >
                                       <Download className="w-3.5 h-3.5" />
                                     </Button>
-                                    <Button size="icon" variant="default" className="w-7 h-7 rounded-lg shadow-lg shadow-primary/20" onClick={() => shareImage(item.resultUrl!)}>
+                                    <Button 
+                                      size="icon" 
+                                      variant="default" 
+                                      className="w-7 h-7 rounded-lg shadow-lg shadow-primary/20" 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        shareImage(item.resultUrl!);
+                                      }}
+                                    >
                                       <ExternalLink className="w-3.5 h-3.5" />
                                     </Button>
                                   </div>
@@ -614,10 +652,12 @@ const App: React.FC = () => {
               </div>
 
               <div className="flex-1 relative overflow-hidden bg-black/20 flex items-center justify-center p-4">
-                <ZoomableImage 
-                  src={showOriginalPreview ? previewItem?.previewUrl || '' : (previewItem?.resultUrl || previewItem?.previewUrl || '')} 
-                  alt="Preview"
-                />
+                {previewItem && (
+                  <ZoomableImage 
+                    src={showOriginalPreview ? previewItem.previewUrl : (previewItem.resultUrl || previewItem.previewUrl)} 
+                    alt="Preview"
+                  />
+                )}
               </div>
 
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 glass px-6 py-3 rounded-full flex items-center gap-4 z-50">
@@ -717,12 +757,14 @@ const ZoomableImage: React.FC<{ src: string; alt: string }> = ({ src, alt }) => 
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="relative"
       >
-        <img 
-          src={src} 
-          alt={alt} 
-          className="max-w-full max-h-[80vh] object-contain pointer-events-none select-none rounded-lg shadow-2xl"
-          referrerPolicy="no-referrer"
-        />
+        {src ? (
+          <img 
+            src={src} 
+            alt={alt} 
+            className="max-w-full max-h-[80vh] object-contain pointer-events-none select-none rounded-lg shadow-2xl"
+            referrerPolicy="no-referrer"
+          />
+        ) : null}
       </motion.div>
       
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
