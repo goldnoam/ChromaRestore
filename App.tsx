@@ -14,6 +14,10 @@ import {
   RefreshCw, 
   Image as ImageIcon,
   ExternalLink,
+  ZoomIn,
+  ZoomOut,
+  Plus,
+  Minus,
   Mail,
   Info,
   Sparkles,
@@ -73,6 +77,8 @@ const App: React.FC = () => {
   const [cameraError, setCameraError] = useState<string | null>(null);
   
   const [isDragging, setIsDragging] = useState(false);
+  const [previewItem, setPreviewItem] = useState<ImageItem | null>(null);
+  const [showOriginalPreview, setShowOriginalPreview] = useState(false);
   
   const [processingIndex, setProcessingIndex] = useState<number>(0);
   
@@ -295,21 +301,10 @@ const App: React.FC = () => {
             )}
             <div className="text-center space-y-4">
               <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                {isProcessing ? (
-                  <RefreshCw className="w-10 h-10 text-primary animate-spin" />
-                ) : (
-                  <Upload className="w-10 h-10 text-primary" />
-                )}
+                <Upload className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-3xl font-extrabold tracking-tight">
-                {isProcessing 
-                  ? t.imageCount.replace('{current}', processingIndex.toString()).replace('{total}', images.length.toString())
-                  : t.dropzoneTitle
-                }
-              </h2>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                {isProcessing ? t.processingDesc : t.dropzoneSub}
-              </p>
+              <h2 className="text-3xl font-extrabold tracking-tight">{t.dropzoneTitle}</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">{t.dropzoneSub}</p>
               
               <div className="flex items-center justify-center gap-4 pt-4">
                 <Button 
@@ -414,9 +409,25 @@ const App: React.FC = () => {
           {/* Gallery / Results */}
           <Card className="bento-item bento-item-large glass">
             <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">{t.imageCount.replace('{count}', images.length.toString())}</CardTitle>
-                <CardDescription>{t.completedCount.replace('{count}', images.filter(i => i.status === 'completed').length.toString())}</CardDescription>
+              <div className="flex items-center gap-4">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">
+                    {isProcessing 
+                      ? t.imageCount.replace('{current}', processingIndex.toString()).replace('{total}', images.length.toString())
+                      : t.totalImages.replace('{count}', images.length.toString())
+                    }
+                  </CardTitle>
+                  <CardDescription>
+                    {isProcessing ? (
+                      <span className="flex items-center gap-2 text-primary animate-pulse font-bold">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        {t.processingDesc}
+                      </span>
+                    ) : (
+                      t.completedCount.replace('{count}', images.filter(i => i.status === 'completed').length.toString())
+                    )}
+                  </CardDescription>
+                </div>
               </div>
               {images.length > 0 && (
                 <Button variant="ghost" size="sm" onClick={() => setImages([])} className="text-destructive hover:text-destructive/80 font-bold uppercase text-[10px]">
@@ -437,12 +448,58 @@ const App: React.FC = () => {
                         exit={{ opacity: 0, scale: 0.9, x: -20 }}
                         className="group relative rounded-2xl overflow-hidden glass aspect-square spotlight"
                       >
-                        <img 
-                          src={item.resultUrl || item.previewUrl} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
+                        <div 
+                          className="relative w-full h-full flex items-stretch cursor-zoom-in"
+                          onClick={() => {
+                            setPreviewItem(item);
+                            setShowOriginalPreview(false);
+                          }}
+                          onDoubleClick={() => {
+                            setPreviewItem(item);
+                            setShowOriginalPreview(false);
+                          }}
+                        >
+                          {item.status === 'completed' && item.resultUrl ? (
+                            <>
+                              <div className="flex-1 relative overflow-hidden border-r border-white/10">
+                                <img 
+                                  src={item.previewUrl} 
+                                  alt="Original" 
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                                <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md text-[8px] font-bold text-white uppercase tracking-tighter z-10">
+                                  {t.original}
+                                </div>
+                              </div>
+                              <div className="flex-1 relative overflow-hidden">
+                                <img 
+                                  src={item.resultUrl} 
+                                  alt="Restored" 
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                                <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-primary/80 backdrop-blur-md text-[8px] font-bold text-white uppercase tracking-tighter z-10">
+                                  {t.result}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full relative">
+                              <img 
+                                src={item.previewUrl} 
+                                alt="Preview" 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                referrerPolicy="no-referrer"
+                              />
+                              {item.status === 'processing' && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-20">
+                                  <RefreshCw className="w-8 h-8 text-white animate-spin" />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
                           <div className="flex flex-col gap-3">
@@ -489,12 +546,6 @@ const App: React.FC = () => {
                             </div>
                           </div>
                         </div>
-
-                        {item.status === 'processing' && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                            <RefreshCw className="w-8 h-8 text-white animate-spin" />
-                          </div>
-                        )}
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -539,6 +590,66 @@ const App: React.FC = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Preview Dialog */}
+        <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
+          <DialogContent className="glass sm:max-w-[90vw] h-[90vh] p-0 overflow-hidden border-none">
+            <div className="relative w-full h-full flex flex-col">
+              <div className="absolute top-4 right-4 z-50 flex gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="icon" 
+                  className="rounded-full glass"
+                  onClick={() => previewItem && downloadImage(previewItem.resultUrl || previewItem.previewUrl, `preview_${previewItem.file.name}`)}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="icon" 
+                  className="rounded-full glass"
+                  onClick={() => setPreviewItem(null)}
+                >
+                  <Minimize2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="flex-1 relative overflow-hidden bg-black/20 flex items-center justify-center p-4">
+                <ZoomableImage 
+                  src={showOriginalPreview ? previewItem?.previewUrl || '' : (previewItem?.resultUrl || previewItem?.previewUrl || '')} 
+                  alt="Preview"
+                />
+              </div>
+
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 glass px-6 py-3 rounded-full flex items-center gap-4 z-50">
+                {previewItem?.status === 'completed' && previewItem.resultUrl ? (
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      variant={showOriginalPreview ? "default" : "ghost"} 
+                      size="sm" 
+                      className="rounded-full text-[10px] font-bold uppercase"
+                      onClick={() => setShowOriginalPreview(true)}
+                    >
+                      {t.original}
+                    </Button>
+                    <Button 
+                      variant={!showOriginalPreview ? "default" : "ghost"} 
+                      size="sm" 
+                      className="rounded-full text-[10px] font-bold uppercase"
+                      onClick={() => setShowOriginalPreview(false)}
+                    >
+                      {t.result}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">{t.original}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Footer */}
         <footer className="glass mt-auto px-6 py-8">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
@@ -572,6 +683,60 @@ const App: React.FC = () => {
         <Toaster position="bottom-right" theme={theme === 'colorful' ? 'dark' : theme} />
       </div>
     </TooltipProvider>
+  );
+};
+
+const ZoomableImage: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setScale(prev => Math.min(Math.max(prev + delta, 0.5), 5));
+  };
+
+  const reset = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  return (
+    <div 
+      ref={containerRef}
+      className="w-full h-full overflow-hidden flex items-center justify-center cursor-move touch-none"
+      onWheel={handleWheel}
+      onDoubleClick={reset}
+    >
+      <motion.div
+        drag
+        dragConstraints={containerRef}
+        dragElastic={0.1}
+        animate={{ scale, x: position.x, y: position.y }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="relative"
+      >
+        <img 
+          src={src} 
+          alt={alt} 
+          className="max-w-full max-h-[80vh] object-contain pointer-events-none select-none rounded-lg shadow-2xl"
+          referrerPolicy="no-referrer"
+        />
+      </motion.div>
+      
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+        <Button variant="secondary" size="icon" className="rounded-full glass w-8 h-8" onClick={() => setScale(s => Math.min(s + 0.5, 5))}>
+          <Plus className="w-4 h-4" />
+        </Button>
+        <Button variant="secondary" size="icon" className="rounded-full glass w-8 h-8" onClick={() => setScale(s => Math.max(s - 0.5, 0.5))}>
+          <Minus className="w-4 h-4" />
+        </Button>
+        <Button variant="secondary" size="icon" className="rounded-full glass w-8 h-8" onClick={reset}>
+          <RefreshCw className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
   );
 };
 
