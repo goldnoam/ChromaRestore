@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'chroma-restore-v16';
+const CACHE_NAME = 'chroma-restore-v17';
 const ASSETS = [
   './',
   './index.html',

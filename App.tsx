@@ -26,9 +26,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { Language, ImageItem, RestoreParams, GradingPreset, EngineType } from './types';
+import { Language, ImageItem, RestoreParams, GradingPreset } from './types';
 import { translations } from './i18n';
-import { colorizeWithGemini } from './services/geminiService';
 import { processImageLocally, fileToBase64 } from './services/restorationService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -60,8 +59,7 @@ const DEFAULT_PARAMS: RestoreParams = {
   saturation: 1.25,
   contrast: 1.15,
   intensity: 1.0,
-  grading: 'none',
-  engine: 'gemini'
+  grading: 'none'
 };
 
 const App: React.FC = () => {
@@ -173,12 +171,7 @@ const App: React.FC = () => {
       setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'processing' } : img));
       const base64 = await fileToBase64(item.file);
       
-      let resultUrl: string;
-      if (params.engine === 'gemini') {
-        resultUrl = await colorizeWithGemini(base64, item.file.type, params.grading);
-      } else {
-        resultUrl = await processImageLocally(base64, item.file.type, params);
-      }
+      const resultUrl = await processImageLocally(base64, item.file.type, params);
 
       setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'completed', resultUrl } : img));
       toast.success(t.completed);
@@ -236,7 +229,7 @@ const App: React.FC = () => {
               <Sparkles className="text-white w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">ChromaRestore AI</h1>
+              <h1 className="text-xl font-bold tracking-tight">ChromaRestore Pro</h1>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">{t.subtitle}</p>
             </div>
           </div>
@@ -345,22 +338,6 @@ const App: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase tracking-wider">{t.engineType}</Label>
-                  <Badge variant="secondary" className="font-mono">{tuningParams.engine}</Badge>
-                </div>
-                <Tabs 
-                  value={tuningParams.engine} 
-                  onValueChange={(v) => setTuningParams(p => ({ ...p, engine: v as EngineType }))}
-                >
-                  <TabsList className="grid grid-cols-2 glass">
-                    <TabsTrigger value="gemini" className="text-xs font-bold">Gemini AI</TabsTrigger>
-                    <TabsTrigger value="local" className="text-xs font-bold">Local</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              <div className="space-y-4">
                 <Label className="text-xs font-bold uppercase tracking-wider">{t.colorGrading}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['none', 'cinematic', 'vintage', 'vibrant', 'sepia', 'artistic', 'stable'] as GradingPreset[]).map(p => (
@@ -371,14 +348,13 @@ const App: React.FC = () => {
                       className="text-[10px] font-bold uppercase tracking-tighter h-8 rounded-lg glass"
                       onClick={() => setTuningParams(prev => ({ ...prev, grading: p }))}
                     >
-                      {p}
+                      {t[p] || p}
                     </Button>
                   ))}
                 </div>
               </div>
 
-              {tuningParams.engine === 'local' && (
-                <div className="space-y-6 pt-4">
+              <div className="space-y-6 pt-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
                       <span>{t.temperature}</span>
@@ -401,8 +377,29 @@ const App: React.FC = () => {
                       onValueChange={(v: number[]) => setTuningParams(p => ({ ...p, saturation: v[0] }))}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span>{t.contrast}</span>
+                      <span>{tuningParams.contrast}x</span>
+                    </div>
+                    <Slider 
+                      value={[tuningParams.contrast]} 
+                      min={0.5} max={2} step={0.1}
+                      onValueChange={(v: number[]) => setTuningParams(p => ({ ...p, contrast: v[0] }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span>{t.intensity}</span>
+                      <span>{Math.round(tuningParams.intensity * 100)}%</span>
+                    </div>
+                    <Slider 
+                      value={[tuningParams.intensity]} 
+                      min={0} max={1} step={0.01}
+                      onValueChange={(v: number[]) => setTuningParams(p => ({ ...p, intensity: v[0] }))}
+                    />
+                  </div>
                 </div>
-              )}
             </CardContent>
           </Card>
 
@@ -696,7 +693,7 @@ const App: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <span className="font-bold">ChromaRestore AI</span>
+                <span className="font-bold">ChromaRestore Pro</span>
               </div>
               <p className="text-xs text-muted-foreground">© 2026 Noam Gold AI. All rights reserved.</p>
             </div>

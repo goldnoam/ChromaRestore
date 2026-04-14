@@ -2,8 +2,6 @@ export type Language = 'en' | 'he' | 'zh' | 'hi' | 'de' | 'es' | 'fr';
 
 export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia' | 'artistic' | 'stable';
 
-export type EngineType = 'local' | 'opencv' | 'paddlehub' | 'gemini';
-
 export interface ImageItem {
   id: string;
   file: File;
@@ -20,7 +18,6 @@ export interface RestoreParams {
   contrast: number;
   intensity: number;
   grading: GradingPreset;
-  engine: EngineType;
 }
 
 export interface Translation {
@@ -105,11 +102,5 @@ export interface Translation {
   noneDesc: string;
   engineType: string;
   localEngine: string;
-  opencvEngine: string;
-  paddlehubEngine: string;
   localDesc: string;
-  opencvDesc: string;
-  paddlehubDesc: string;
-  geminiEngine: string;
-  geminiDesc: string;
 }
