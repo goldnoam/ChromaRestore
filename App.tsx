@@ -74,6 +74,8 @@ const App: React.FC = () => {
   
   const [isDragging, setIsDragging] = useState(false);
   
+  const [processingIndex, setProcessingIndex] = useState<number>(0);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -159,8 +161,9 @@ const App: React.FC = () => {
     setImages(prev => [...newImages, ...prev]);
   };
 
-  const processSingle = useCallback(async (item: ImageItem, params: RestoreParams) => {
+  const processSingle = useCallback(async (item: ImageItem, params: RestoreParams, index: number) => {
     try {
+      setProcessingIndex(index + 1);
       setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'processing' } : img));
       const base64 = await fileToBase64(item.file);
       
@@ -180,10 +183,10 @@ const App: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    const pending = images.find(img => img.status === 'pending');
-    if (pending && !isProcessing) {
+    const pendingIndex = images.findIndex(img => img.status === 'pending');
+    if (pendingIndex !== -1 && !isProcessing) {
       setIsProcessing(true);
-      processSingle(pending, tuningParams).finally(() => setIsProcessing(false));
+      processSingle(images[pendingIndex], tuningParams, pendingIndex).finally(() => setIsProcessing(false));
     }
   }, [images, isProcessing, processSingle, tuningParams]);
 
@@ -194,12 +197,20 @@ const App: React.FC = () => {
     }
   };
 
-  const downloadImage = (item: ImageItem) => {
-    if (!item.resultUrl) return;
+  const downloadImage = (url: string, filename: string) => {
     const link = document.createElement('a');
-    link.href = item.resultUrl;
-    link.download = `colorized_${item.file.name}`;
+    link.href = url;
+    link.download = filename;
     link.click();
+  };
+
+  const shareImage = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t.shareSuccess);
+    } catch (err) {
+      toast.error("Failed to copy link");
+    }
   };
 
   return (
@@ -284,10 +295,21 @@ const App: React.FC = () => {
             )}
             <div className="text-center space-y-4">
               <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-                <Upload className="w-10 h-10 text-primary" />
+                {isProcessing ? (
+                  <RefreshCw className="w-10 h-10 text-primary animate-spin" />
+                ) : (
+                  <Upload className="w-10 h-10 text-primary" />
+                )}
               </div>
-              <h2 className="text-3xl font-extrabold tracking-tight">{t.dropzoneTitle}</h2>
-              <p className="text-muted-foreground max-w-md mx-auto">{t.dropzoneSub}</p>
+              <h2 className="text-3xl font-extrabold tracking-tight">
+                {isProcessing 
+                  ? t.imageCount.replace('{current}', processingIndex.toString()).replace('{total}', images.length.toString())
+                  : t.dropzoneTitle
+                }
+              </h2>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                {isProcessing ? t.processingDesc : t.dropzoneSub}
+              </p>
               
               <div className="flex items-center justify-center gap-4 pt-4">
                 <Button 
@@ -422,26 +444,49 @@ const App: React.FC = () => {
                           referrerPolicy="no-referrer"
                         />
                         
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex gap-1">
-                              {item.status === 'completed' && (
-                                <Button size="icon" variant="secondary" className="w-8 h-8 rounded-full" onClick={() => downloadImage(item)}>
-                                  <Download className="w-4 h-4" />
-                                </Button>
-                              )}
-                              <Button size="icon" variant="destructive" className="w-8 h-8 rounded-full" onClick={() => removeImage(item.id)}>
-                                <Trash2 className="w-4 h-4" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <Badge className={cn(
+                                "font-bold uppercase text-[8px]",
+                                item.status === 'completed' ? "bg-green-500" : 
+                                item.status === 'processing' ? "bg-blue-500 animate-pulse" : 
+                                item.status === 'error' ? "bg-red-500" : "bg-slate-500"
+                              )}>
+                                {t[item.status]}
+                              </Badge>
+                              <Button size="icon" variant="destructive" className="w-7 h-7 rounded-full" onClick={() => removeImage(item.id)}>
+                                <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                             </div>
-                            <Badge className={cn(
-                              "font-bold uppercase text-[8px]",
-                              item.status === 'completed' ? "bg-green-500" : 
-                              item.status === 'processing' ? "bg-blue-500 animate-pulse" : 
-                              item.status === 'error' ? "bg-red-500" : "bg-slate-500"
-                            )}>
-                              {t[item.status]}
-                            </Badge>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <p className="text-[8px] font-bold text-white/50 uppercase tracking-wider">{t.original}</p>
+                                <div className="flex gap-1">
+                                  <Button size="icon" variant="secondary" className="w-7 h-7 rounded-lg glass" onClick={() => downloadImage(item.previewUrl, `original_${item.file.name}`)}>
+                                    <Download className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="secondary" className="w-7 h-7 rounded-lg glass" onClick={() => shareImage(item.previewUrl)}>
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {item.status === 'completed' && item.resultUrl && (
+                                <div className="space-y-1">
+                                  <p className="text-[8px] font-bold text-primary uppercase tracking-wider">{t.result}</p>
+                                  <div className="flex gap-1">
+                                    <Button size="icon" variant="default" className="w-7 h-7 rounded-lg shadow-lg shadow-primary/20" onClick={() => downloadImage(item.resultUrl!, `restored_${item.file.name}`)}>
+                                      <Download className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button size="icon" variant="default" className="w-7 h-7 rounded-lg shadow-lg shadow-primary/20" onClick={() => shareImage(item.resultUrl!)}>
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
 
