@@ -1,10 +1,55 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Language, ImageItem, RestoreParams, GradingPreset, EngineType, Translation } from './types';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Camera, 
+  Upload, 
+  Download, 
+  Trash2, 
+  Settings, 
+  Moon, 
+  Sun, 
+  Palette, 
+  Maximize2, 
+  Minimize2, 
+  RefreshCw, 
+  Image as ImageIcon,
+  ExternalLink,
+  Mail,
+  Info,
+  Sparkles,
+  Zap,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
+import { Toaster, toast } from 'sonner';
+import { Language, ImageItem, RestoreParams, GradingPreset, EngineType } from './types';
 import { translations } from './i18n';
+import { colorizeWithGemini } from './services/geminiService';
 import { processImageLocally, fileToBase64 } from './services/restorationService';
-import { ImageCard } from './components/ImageCard';
-import { AdPlaceholder } from './components/AdPlaceholder';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 
 const DEFAULT_PARAMS: RestoreParams = {
   temp: 15,
@@ -12,101 +57,36 @@ const DEFAULT_PARAMS: RestoreParams = {
   contrast: 1.15,
   intensity: 1.0,
   grading: 'none',
-  engine: 'local'
-};
-
-const LUCKY_PROFILES: RestoreParams[] = [
-  { temp: 35, saturation: 1.45, contrast: 1.25, intensity: 1.0, grading: 'cinematic', engine: 'opencv' },
-  { temp: -15, saturation: 1.3, contrast: 1.1, intensity: 0.9, grading: 'vintage', engine: 'local' },
-  { temp: 10, saturation: 1.8, contrast: 1.4, intensity: 1.0, grading: 'vibrant', engine: 'paddlehub' },
-  { temp: 20, saturation: 1.1, contrast: 1.0, intensity: 0.7, grading: 'sepia', engine: 'local' },
-  { temp: 5, saturation: 1.5, contrast: 1.3, intensity: 1.0, grading: 'artistic', engine: 'paddlehub' },
-  { temp: 0, saturation: 1.0, contrast: 1.0, intensity: 1.0, grading: 'stable', engine: 'paddlehub' },
-];
-
-const PRESET_ICONS: Record<GradingPreset, string> = {
-  none: '⚪',
-  cinematic: '🎬',
-  vintage: '📷',
-  vibrant: '🌈',
-  sepia: '🎞️',
-  artistic: '🎨',
-  stable: '⚖️'
-};
-
-const ENGINE_ICONS: Record<EngineType, string> = {
-  local: '⚡',
-  opencv: '🤖',
-  paddlehub: '🧬'
+  engine: 'gemini'
 };
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('chroma-theme') as 'dark' | 'light') || 'dark';
+  const [theme, setTheme] = useState<'dark' | 'light' | 'colorful'>(() => {
+    return (localStorage.getItem('chroma-theme') as any) || 'dark';
   });
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [showOriginalInModal, setShowOriginalInModal] = useState(false);
-  const [isControlsVisible, setIsControlsVisible] = useState(true);
-  const [lastSaved, setLastSaved] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [targetPrefix, setTargetPrefix] = useState('');
-  
   const [tuningParams, setTuningParams] = useState<RestoreParams>(DEFAULT_PARAMS);
-  const [isReprocessing, setIsReprocessing] = useState(false);
-
-  // Camera States
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-
+  
+  const [isDragging, setIsDragging] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const modalViewportRef = useRef<HTMLDivElement>(null);
-  const modalContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isDraggingImage = useRef(false);
-  const lastMousePos = useRef({ x: 0, y: 0 });
-  const processTimerRef = useRef<number | null>(null);
-  
-  const t = translations[lang];
-  const isRtl = lang === 'he';
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
-  }, []);
-
-  const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      modalContainerRef.current?.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen();
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedIndex !== null && e.key.toLowerCase() === 'f') toggleFullscreen();
-      if (selectedIndex !== null && e.key === '0') { setZoomLevel(1); setPanOffset({x:0,y:0}); }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex, toggleFullscreen]);
-
-  useEffect(() => {
-    document.title = t.title + " | " + t.subtitle;
-  }, [t]);
-
-  useEffect(() => {
-    localStorage.setItem('chroma-theme', theme);
-    document.documentElement.className = theme;
-  }, [theme]);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    containerRef.current.style.setProperty('--x', `${x}px`);
+    containerRef.current.style.setProperty('--y', `${y}px`);
+  };
 
   const openCamera = async () => {
     setIsCameraOpen(true);
@@ -114,14 +94,15 @@ const App: React.FC = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch {
+    } catch (err) {
       setCameraError(t.cameraPermissionDenied);
-      setIsCameraOpen(false);
     }
   };
 
   const closeCamera = () => {
-    if (videoRef.current?.srcObject) (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+    if (videoRef.current?.srcObject) {
+      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+    }
     setIsCameraOpen(false);
   };
 
@@ -137,278 +118,417 @@ const App: React.FC = () => {
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `captured_${Date.now()}.jpg`, { type: 'image/jpeg' });
-          setImages(prev => [{ id: Math.random().toString(36).substr(2, 9), file: file as any as File, previewUrl: URL.createObjectURL(file as any as Blob), status: 'pending' }, ...prev]);
+          addFiles([file]);
           closeCamera();
         }
       }, 'image/jpeg');
     }
   };
 
-  const exportSingle = useCallback((item: ImageItem) => {
-    if (!item.resultUrl) return;
-    const prefix = targetPrefix.trim() || 'colorized';
-    const link = document.createElement('a');
-    link.href = item.resultUrl;
-    link.download = `${prefix}_${item.file.name}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [targetPrefix]);
-
-  const processSingle = useCallback(async (item: ImageItem, params: RestoreParams = DEFAULT_PARAMS) => {
-    try {
-      const base64 = await fileToBase64(item.file);
-      const resultUrl = await processImageLocally(base64, item.file.type, params);
-      setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'completed', resultUrl } : img));
-    } catch (err: any) {
-      setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'error', error: err.message } : img));
-    }
-  }, []);
+  const t = translations[lang];
 
   useEffect(() => {
-    if (selectedIndex === null || !images[selectedIndex]) return;
-    const item = images[selectedIndex];
-    if (processTimerRef.current) window.clearTimeout(processTimerRef.current);
-    setIsReprocessing(true);
-    processTimerRef.current = window.setTimeout(async () => {
-      await processSingle(item, tuningParams);
-      setIsReprocessing(false);
-      localStorage.setItem(`tuning_${item.file.name}`, JSON.stringify(tuningParams));
-      setLastSaved(true);
-      setTimeout(() => setLastSaved(false), 1500);
-    }, 150);
-    return () => { if (processTimerRef.current) window.clearTimeout(processTimerRef.current); };
-  }, [tuningParams, selectedIndex, processSingle]);
+    localStorage.setItem('chroma-theme', theme);
+    document.documentElement.className = theme;
+  }, [theme]);
 
-  const processNextPending = useCallback(async () => {
-    const nextItem = images.find(img => img.status === 'pending');
-    if (!nextItem || isProcessing) return;
-    setIsProcessing(true);
-    setImages(prev => prev.map(img => img.id === nextItem.id ? { ...img, status: 'processing' } : img));
-    const saved = localStorage.getItem(`tuning_${nextItem.file.name}`);
-    await processSingle(nextItem, saved ? JSON.parse(saved) : DEFAULT_PARAMS);
-    setIsProcessing(false);
-  }, [images, isProcessing, processSingle]);
+  const onDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
 
-  useEffect(() => { processNextPending(); }, [images, processNextPending]);
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (selectedIndex === null) return;
-    isDraggingImage.current = true;
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => (f as File).type.startsWith('image/')) as File[];
+    addFiles(files);
+  }, []);
+
+  const addFiles = (files: File[]) => {
+    const newImages: ImageItem[] = files.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      previewUrl: URL.createObjectURL(file),
+      status: 'pending'
+    }));
+    setImages(prev => [...newImages, ...prev]);
   };
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDraggingImage.current) return;
-    setPanOffset(prev => ({ x: prev.x + (e.clientX - lastMousePos.current.x), y: prev.y + (e.clientY - lastMousePos.current.y) }));
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-  }, []);
+  const processSingle = useCallback(async (item: ImageItem, params: RestoreParams) => {
+    try {
+      setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'processing' } : img));
+      const base64 = await fileToBase64(item.file);
+      
+      let resultUrl: string;
+      if (params.engine === 'gemini') {
+        resultUrl = await colorizeWithGemini(base64, item.file.type, params.grading);
+      } else {
+        resultUrl = await processImageLocally(base64, item.file.type, params);
+      }
 
-  const handleMouseUp = useCallback(() => { isDraggingImage.current = false; }, []);
+      setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'completed', resultUrl } : img));
+      toast.success(t.completed);
+    } catch (err: any) {
+      setImages(prev => prev.map(img => img.id === item.id ? { ...img, status: 'error', error: err.message } : img));
+      toast.error(err.message || t.error);
+    }
+  }, [t]);
 
   useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
-  }, [handleMouseMove, handleMouseUp]);
+    const pending = images.find(img => img.status === 'pending');
+    if (pending && !isProcessing) {
+      setIsProcessing(true);
+      processSingle(pending, tuningParams).finally(() => setIsProcessing(false));
+    }
+  }, [images, isProcessing, processSingle, tuningParams]);
 
-  const onSelectImage = (item: ImageItem, immediateFs: boolean = false) => {
-    const index = images.indexOf(item);
-    setSelectedIndex(index);
-    setZoomLevel(1); setPanOffset({x:0,y:0});
-    const saved = localStorage.getItem(`tuning_${item.file.name}`);
-    setTuningParams(saved ? JSON.parse(saved) : DEFAULT_PARAMS);
-    if (immediateFs) setTimeout(toggleFullscreen, 100);
+  const removeImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id));
+    if (selectedIndex !== null && images[selectedIndex]?.id === id) {
+      setSelectedIndex(null);
+    }
+  };
+
+  const downloadImage = (item: ImageItem) => {
+    if (!item.resultUrl) return;
+    const link = document.createElement('a');
+    link.href = item.resultUrl;
+    link.download = `colorized_${item.file.name}`;
+    link.click();
   };
 
   return (
-    <div className={`min-h-screen ${theme} theme-bg-app theme-text-main font-sans lang-${lang} ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
-      <header className={`sticky top-0 z-40 backdrop-blur-xl border-b theme-border shadow-2xl ${theme === 'dark' ? 'bg-slate-900/90' : 'bg-white/90'}`}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <TooltipProvider>
+      <div 
+        ref={containerRef}
+        onMouseMove={handleMouseMove}
+        className="min-h-screen relative overflow-hidden flex flex-col spotlight"
+      >
+        {/* Animated Background */}
+        <div className="fixed inset-0 -z-10 mesh-bg opacity-30" />
+        
+        {/* Header */}
+        <header className="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🎨</span>
-            <h1 className="text-lg font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-indigo-300">{t.title}</h1>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <Sparkles className="text-white w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">ChromaRestore AI</h1>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">{t.subtitle}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="p-2.5 rounded-xl border theme-border theme-bg-card transition-transform active:scale-95">{theme === 'dark' ? '🌙' : '☀️'}</button>
-            <select value={lang} onChange={(e) => setLang(e.target.value as Language)} className="border theme-border rounded-xl px-3 py-1.5 text-xs font-bold theme-bg-card outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="en">English</option>
-              <option value="he">עברית</option>
-              <option value="zh">中文</option>
-              <option value="hi">हिन्दी</option>
-              <option value="de">Deutsch</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-            </select>
+
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="rounded-full" />}>
+                <Palette className="w-5 h-5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass">
+                <DropdownMenuItem onClick={() => setTheme('light')}>
+                  <Sun className="w-4 h-4 mr-2" /> Light
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('dark')}>
+                  <Moon className="w-4 h-4 mr-2" /> Dark
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('colorful')}>
+                  <Sparkles className="w-4 h-4 mr-2" /> Colorful
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="font-bold uppercase tracking-tighter" />}>
+                {lang}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass">
+                {(Object.keys(translations) as Language[]).map(l => (
+                  <DropdownMenuItem key={l} onClick={() => setLang(l)}>
+                    {l.toUpperCase()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight">{t.subtitle}</h2>
-          <p className="theme-text-muted text-sm font-medium flex items-center justify-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            {t.offlineReady}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <aside className="lg:col-span-1 space-y-6">
-            <div className="p-6 rounded-[2.5rem] shadow-2xl border theme-border theme-bg-card">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest opacity-60 ml-1">{t.targetFolder}</label>
-                  <input type="text" value={targetPrefix} onChange={e => setTargetPrefix(e.target.value)} placeholder={t.targetFolderPlaceholder} className="w-full px-4 py-3 rounded-xl border theme-border theme-bg-app text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+        {/* Main Content */}
+        <main className="flex-1 bento-grid max-w-7xl mx-auto w-full">
+          {/* Dropzone / Upload Area */}
+          <Card 
+            className={cn(
+              "bento-item bento-item-large glass flex flex-col items-center justify-center border-dashed border-2 transition-all duration-500 relative overflow-hidden",
+              isProcessing ? "opacity-50 pointer-events-none" : "hover:border-primary/50",
+              isDragging ? "border-primary bg-primary/5 scale-[0.99]" : "border-muted/20"
+            )}
+            onDragOver={(e) => e.preventDefault()}
+            onDragEnter={onDragEnter}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+          >
+            {isDragging && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 bg-primary/10 backdrop-blur-sm flex items-center justify-center z-10 pointer-events-none"
+              >
+                <div className="bg-background/80 p-6 rounded-full shadow-2xl border border-primary/20">
+                  <Upload className="w-12 h-12 text-primary animate-bounce" />
                 </div>
-                <button onClick={() => images.forEach(img => img.status === 'completed' && exportSingle(img))} disabled={!images.some(i => i.status === 'completed')} className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2">
-                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                   {t.downloadAll}
-                </button>
-                <button onClick={openCamera} className="w-full py-4 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-500 hover:text-white transition-all text-slate-700 dark:text-slate-200 font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2">
-                  <span>📷</span> {t.openCamera}
-                </button>
-                <button onClick={() => setImages([])} className="w-full py-3 theme-text-muted hover:text-rose-500 transition-colors text-[10px] font-black uppercase tracking-widest">{t.clearBtn}</button>
+              </motion.div>
+            )}
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <Upload className="w-10 h-10 text-primary" />
               </div>
-            </div>
-            <AdPlaceholder label={t.adPlaceholder} />
-          </aside>
-
-          <section className="lg:col-span-3 space-y-6">
-            <div 
-              onDragOver={e => { e.preventDefault(); setIsDragging(true); }} 
-              onDragLeave={() => setIsDragging(false)} 
-              onDrop={e => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files) Array.from(e.dataTransfer.files).forEach(file => setImages(p => [...p, { id: Math.random().toString(36).substr(2, 9), file: file as any as File, previewUrl: URL.createObjectURL(file as any as Blob), status: 'pending' }])); }} 
-              onClick={() => fileInputRef.current?.click()} 
-              className={`border-2 border-dashed rounded-[3rem] p-14 text-center cursor-pointer transition-all duration-500 group relative overflow-hidden ${isDragging ? 'drag-pulsing shimmer-effect' : 'theme-border hover:border-indigo-500/50 theme-bg-card'}`}
-            >
-              <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={e => e.target.files && Array.from(e.target.files).forEach(file => setImages(p => [...p, { id: Math.random().toString(36).substr(2, 9), file: file as any as File, previewUrl: URL.createObjectURL(file as any as Blob), status: 'pending' }]))} />
-              <div className="mb-6 mx-auto w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <svg className="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              <h2 className="text-3xl font-extrabold tracking-tight">{t.dropzoneTitle}</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">{t.dropzoneSub}</p>
+              
+              <div className="flex items-center justify-center gap-4 pt-4">
+                <Button 
+                  size="lg" 
+                  className="rounded-full px-8 font-bold shadow-xl shadow-primary/20"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImageIcon className="w-5 h-5 mr-2" /> {t.colorizeBtn}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="rounded-full px-8 glass font-bold"
+                  onClick={openCamera}
+                >
+                  <Camera className="w-5 h-5 mr-2" /> {t.openCamera}
+                </Button>
               </div>
-              <h3 className="text-2xl font-black mb-1">{t.dropzoneTitle}</h3>
-              <p className="theme-text-muted text-[10px] font-black uppercase tracking-widest">{t.dropzoneSub}</p>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                multiple 
+                accept="image/*" 
+                onChange={(e) => e.target.files && addFiles(Array.from(e.target.files))}
+              />
             </div>
+          </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-              {images.map(img => <ImageCard key={img.id} item={img} t={t} theme={theme} onRemove={id => setImages(p => p.filter(i => i.id !== id))} onSelect={onSelectImage} onShare={i => navigator.share?.({ title: t.shareTitle, url: window.location.href })} />)}
-            </div>
-          </section>
-        </div>
-      </main>
-
-      {isCameraOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-6">
-          <div className="relative max-w-2xl w-full flex flex-col items-center gap-6">
-            <div className="relative w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-white/10 shadow-2xl">
-              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover grayscale" />
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="absolute top-4 left-4 flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-[10px] font-black uppercase text-white tracking-widest shadow-sm">Live Feed</span>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <button onClick={closeCamera} className="p-5 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition-all border border-white/5">✖</button>
-              <button onClick={capturePhoto} className="px-10 py-5 rounded-full bg-indigo-600 text-white font-black uppercase shadow-xl hover:bg-indigo-500 active:scale-95 transition-all">{t.capture}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedIndex !== null && images[selectedIndex] && (
-        <div ref={modalContainerRef} className={`fixed inset-0 z-50 flex flex-col md:flex-row backdrop-blur-3xl overflow-hidden animate-in fade-in duration-300 ${theme === 'dark' ? 'bg-slate-950/98' : 'bg-slate-50/95'}`} onClick={() => setSelectedIndex(null)}>
-          <div className="flex-1 relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="h-16 px-6 flex items-center justify-between border-b theme-border theme-bg-card z-10">
-              <span className="text-[10px] font-black uppercase tracking-wider truncate border theme-border px-3 py-1.5 rounded-lg max-w-[200px]">{images[selectedIndex].file.name}</span>
+          {/* Settings / Tuning Panel */}
+          <Card className="bento-item glass">
+            <CardHeader>
               <div className="flex items-center gap-2">
-                <button onClick={() => exportSingle(images[selectedIndex])} className="p-2 w-10 h-10 border theme-border rounded-xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group" data-tooltip={t.export}>
-                   <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                </button>
-                <button onClick={toggleFullscreen} className="p-2 w-10 h-10 border theme-border rounded-xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group" data-tooltip={t.fullScreen}>
-                   <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5" /></svg>
-                </button>
-                <button onMouseDown={() => setShowOriginalInModal(true)} onMouseUp={() => setShowOriginalInModal(false)} onMouseLeave={() => setShowOriginalInModal(false)} onTouchStart={() => setShowOriginalInModal(true)} onTouchEnd={() => setShowOriginalInModal(false)} className={`px-4 py-2 h-10 text-[10px] font-black uppercase border theme-border rounded-xl transition-all ${showOriginalInModal ? 'bg-indigo-600 text-white border-indigo-500' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>{t.beforeAfter}</button>
-                <button onClick={() => setSelectedIndex(null)} className="p-2 w-10 h-10 flex items-center justify-center rounded-xl hover:text-rose-400 transition-colors">✖</button>
+                <Settings className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">{t.tuning}</CardTitle>
               </div>
+              <CardDescription>{t.settingsSaved}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase tracking-wider">{t.engineType}</Label>
+                  <Badge variant="secondary" className="font-mono">{tuningParams.engine}</Badge>
+                </div>
+                <Tabs 
+                  value={tuningParams.engine} 
+                  onValueChange={(v) => setTuningParams(p => ({ ...p, engine: v as EngineType }))}
+                >
+                  <TabsList className="grid grid-cols-2 glass">
+                    <TabsTrigger value="gemini" className="text-xs font-bold">Gemini AI</TabsTrigger>
+                    <TabsTrigger value="local" className="text-xs font-bold">Local</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-xs font-bold uppercase tracking-wider">{t.colorGrading}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['none', 'cinematic', 'vintage', 'vibrant', 'sepia', 'artistic', 'stable'] as GradingPreset[]).map(p => (
+                    <Button
+                      key={p}
+                      variant={tuningParams.grading === p ? "default" : "outline"}
+                      size="sm"
+                      className="text-[10px] font-bold uppercase tracking-tighter h-8 rounded-lg glass"
+                      onClick={() => setTuningParams(prev => ({ ...prev, grading: p }))}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {tuningParams.engine === 'local' && (
+                <div className="space-y-6 pt-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span>{t.temperature}</span>
+                      <span>{tuningParams.temp}°</span>
+                    </div>
+                    <Slider 
+                      value={[tuningParams.temp]} 
+                      min={-100} max={100} step={1}
+                      onValueChange={(v: number[]) => setTuningParams(p => ({ ...p, temp: v[0] }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span>{t.saturation}</span>
+                      <span>{tuningParams.saturation}x</span>
+                    </div>
+                    <Slider 
+                      value={[tuningParams.saturation]} 
+                      min={0} max={3} step={0.1}
+                      onValueChange={(v: number[]) => setTuningParams(p => ({ ...p, saturation: v[0] }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Gallery / Results */}
+          <Card className="bento-item bento-item-large glass">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">{t.imageCount.replace('{count}', images.length.toString())}</CardTitle>
+                <CardDescription>{t.completedCount.replace('{count}', images.filter(i => i.status === 'completed').length.toString())}</CardDescription>
+              </div>
+              {images.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={() => setImages([])} className="text-destructive hover:text-destructive/80 font-bold uppercase text-[10px]">
+                  <Trash2 className="w-4 h-4 mr-2" /> {t.clearBtn}
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <AnimatePresence mode="popLayout">
+                    {images.map((item, idx) => (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, x: -20 }}
+                        className="group relative rounded-2xl overflow-hidden glass aspect-square spotlight"
+                      >
+                        <img 
+                          src={item.resultUrl || item.previewUrl} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          referrerPolicy="no-referrer"
+                        />
+                        
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex gap-1">
+                              {item.status === 'completed' && (
+                                <Button size="icon" variant="secondary" className="w-8 h-8 rounded-full" onClick={() => downloadImage(item)}>
+                                  <Download className="w-4 h-4" />
+                                </Button>
+                              )}
+                              <Button size="icon" variant="destructive" className="w-8 h-8 rounded-full" onClick={() => removeImage(item.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <Badge className={cn(
+                              "font-bold uppercase text-[8px]",
+                              item.status === 'completed' ? "bg-green-500" : 
+                              item.status === 'processing' ? "bg-blue-500 animate-pulse" : 
+                              item.status === 'error' ? "bg-red-500" : "bg-slate-500"
+                            )}>
+                              {t[item.status]}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {item.status === 'processing' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                            <RefreshCw className="w-8 h-8 text-white animate-spin" />
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {images.length === 0 && (
+                    <div className="col-span-full h-64 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-3xl border-muted/20">
+                      <ImageIcon className="w-12 h-12 mb-4 opacity-20" />
+                      <p className="font-medium">{t.noResults}</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </main>
+
+        {/* Camera Dialog */}
+        <Dialog open={isCameraOpen} onOpenChange={(open) => !open && closeCamera()}>
+          <DialogContent className="glass sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t.openCamera}</DialogTitle>
+              <DialogDescription>{t.capture}</DialogDescription>
+            </DialogHeader>
+            <div className="relative aspect-video rounded-2xl overflow-hidden bg-black">
+              {cameraError ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                  <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+                  <p className="text-sm font-medium">{cameraError}</p>
+                </div>
+              ) : (
+                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+              )}
+              <canvas ref={canvasRef} className="hidden" />
             </div>
-            
-            <div ref={modalViewportRef} className="flex-1 flex items-center justify-center p-8 overflow-hidden relative cursor-grab active:cursor-grabbing" onMouseDown={handleMouseDown}>
-              <div className="relative transition-transform duration-75 select-none" style={{ transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)` }}>
-                <img src={showOriginalInModal || !images[selectedIndex].resultUrl ? images[selectedIndex].previewUrl : images[selectedIndex].resultUrl} className={`max-w-full max-h-[70vh] rounded-2xl shadow-2xl select-none pointer-events-none transition-all duration-300 ${isReprocessing ? 'opacity-50 blur-sm' : ''}`} draggable={false} />
-                {isReprocessing && <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-2xl backdrop-blur-[2px]"><div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>}
+            <DialogFooter className="sm:justify-center">
+              {!cameraError && (
+                <Button size="lg" className="rounded-full px-8 font-bold" onClick={capturePhoto}>
+                  <Camera className="w-5 h-5 mr-2" /> {t.capture}
+                </Button>
+              )}
+              <Button variant="ghost" className="rounded-full" onClick={closeCamera}>{t.close}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Footer */}
+        <footer className="glass mt-auto px-6 py-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="font-bold">ChromaRestore AI</span>
               </div>
+              <p className="text-xs text-muted-foreground">© 2026 Noam Gold AI. All rights reserved.</p>
+            </div>
+
+            <div className="flex justify-center gap-6">
+              <a href="https://www.linkedin.com/in/noamgold" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <ExternalLink className="w-5 h-5" />
+              </a>
+              <a href="https://noamgoldai.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <ExternalLink className="w-5 h-5" />
+              </a>
+              <a href="https://noam-gold-games.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                <Zap className="w-5 h-5" />
+              </a>
+            </div>
+
+            <div className="text-right space-y-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Send Feedback</p>
+              <a href="mailto:goldnoamai@gmail.com" className="text-sm font-medium hover:text-primary transition-colors">goldnoamai@gmail.com</a>
             </div>
           </div>
+        </footer>
 
-          <aside className="md:w-80 h-full border-l theme-border p-6 flex flex-col gap-6 overflow-y-auto theme-bg-card scrollbar-hide" onClick={e => e.stopPropagation()}>
-            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-50 flex items-center gap-2">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-              {t.tuning}
-            </h4>
-            
-            <div className="space-y-4">
-               <h5 className="text-[9px] font-black uppercase tracking-widest opacity-70">{t.engineType}</h5>
-               <div className="grid grid-cols-1 gap-2">
-                 {(['local', 'opencv', 'paddlehub'] as EngineType[]).map(et => (
-                   <button key={et} onClick={() => setTuningParams(p => ({...p, engine: et}))} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${tuningParams.engine === et ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg' : 'theme-border opacity-60 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800'}`} data-tooltip={t[`${et}Desc` as keyof Translation]}>
-                     <span className="text-base">{ENGINE_ICONS[et]}</span> {t[`${et}Engine` as keyof Translation]}
-                   </button>
-                 ))}
-               </div>
-            </div>
-
-            <div className="space-y-4">
-               <h5 className="text-[9px] font-black uppercase tracking-widest opacity-70">{t.colorGrading}</h5>
-               <div className="grading-list-vertical">
-                 {(['none', 'cinematic', 'vintage', 'vibrant', 'sepia', 'artistic', 'stable'] as GradingPreset[]).map(gp => (
-                   <button 
-                     key={gp} 
-                     onClick={() => setTuningParams(p => ({...p, grading: gp}))} 
-                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${tuningParams.grading === gp ? 'bg-indigo-600 text-white border-indigo-400 shadow-lg' : 'theme-border opacity-60 hover:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-800'}`} 
-                     data-tooltip={t[`${gp}Desc` as keyof Translation]}
-                   >
-                     <span className="text-base">{PRESET_ICONS[gp]}</span> {t[gp as keyof Translation]}
-                   </button>
-                 ))}
-               </div>
-            </div>
-
-            <div className="space-y-5">
-              {[
-                { label: t.temperature, k: 'temp', min: -100, max: 100, step: 1 },
-                { label: t.saturation, k: 'saturation', min: 0, max: 3, step: 0.1 },
-                { label: t.contrast, k: 'contrast', min: 0.5, max: 2, step: 0.1 },
-                { label: t.intensity, k: 'intensity', min: 0, max: 1, step: 0.05 }
-              ].map(s => (
-                <div key={s.k} className="space-y-2">
-                  <div className="flex justify-between text-[10px] font-bold"><span>{s.label}</span><span className="font-mono text-indigo-500">{tuningParams[s.k as keyof RestoreParams]}</span></div>
-                  <input type="range" min={s.min} max={s.max} step={s.step} value={tuningParams[s.k as keyof RestoreParams] as number} onChange={e => setTuningParams(p => ({...p, [s.k]: parseFloat(e.target.value)}))} className="w-full accent-indigo-500 cursor-pointer" />
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-6 space-y-3">
-              <div className="flex gap-2">
-                <button onClick={() => setTuningParams(DEFAULT_PARAMS)} className="flex-1 py-3 rounded-xl border theme-border text-[9px] font-black uppercase hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">{t.resetTuning}</button>
-                <button onClick={() => setTuningParams(LUCKY_PROFILES[Math.floor(Math.random()*LUCKY_PROFILES.length)])} className="flex-[2] py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">✨ {t.feelingLucky}</button>
-              </div>
-              <button onClick={() => exportSingle(images[selectedIndex])} className="w-full py-4 bg-slate-100 dark:bg-slate-800 border theme-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white hover:border-indigo-500 transition-all">{t.export}</button>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      <footer className="py-20 text-center flex flex-col items-center gap-3 opacity-60">
-        <div className="flex items-center gap-6">
-           <a href="mailto:goldnoamai@gmail.com" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-400 transition-colors">{t.sendFeedback}</a>
-           <span className="w-1 h-1 rounded-full bg-slate-700"></span>
-           <p className="text-[10px] font-black uppercase tracking-[0.3em]">(C) Noam Gold AI 2026</p>
-        </div>
-        <p className="text-[9px] font-bold opacity-40 uppercase tracking-[0.5em] text-indigo-400">ChromaRestore Pro Core v15.0 (Hybrid Local + GAN Simulation)</p>
-      </footer>
-    </div>
+        <Toaster position="bottom-right" theme={theme === 'colorful' ? 'dark' : theme} />
+      </div>
+    </TooltipProvider>
   );
 };
 
 export default App;
+

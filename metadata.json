@@ -1,6 +1,6 @@
 {
-  "name": "ChromaRestore Pro",
-  "description": "Professional image management and color restoration template. Refactored for production with multi-language support and enhanced UI.",
+  "name": "ChromaRestore AI",
+  "description": "Professional AI-powered photo restoration and colorization agent. Transform black and white memories into vibrant, realistic colors using Gemini AI.",
   "requestFramePermissions": [
     "camera"
   ]

@@ -2,7 +2,7 @@ export type Language = 'en' | 'he' | 'zh' | 'hi' | 'de' | 'es' | 'fr';
 
 export type GradingPreset = 'none' | 'cinematic' | 'vintage' | 'vibrant' | 'sepia' | 'artistic' | 'stable';
 
-export type EngineType = 'local' | 'opencv' | 'paddlehub';
+export type EngineType = 'local' | 'opencv' | 'paddlehub' | 'gemini';
 
 export interface ImageItem {
   id: string;
@@ -110,4 +110,6 @@ export interface Translation {
   localDesc: string;
   opencvDesc: string;
   paddlehubDesc: string;
+  geminiEngine: string;
+  geminiDesc: string;
 }
